@@ -3,10 +3,12 @@ package com.drf.member.service;
 import com.drf.member.common.exception.BusinessException;
 import com.drf.member.common.exception.ErrorCode;
 import com.drf.member.entitiy.Member;
+import com.drf.member.event.signup.MemberSignUpEvent;
 import com.drf.member.model.request.MemberSignUpRequest;
 import com.drf.member.repository.MemberRepository;
 import com.drf.member.repository.WithdrawnMemberHistoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,8 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final WithdrawnMemberHistoryRepository withdrawnMemberHistoryRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher eventPublisher;
+
 
     @Transactional
     public Long signUp(MemberSignUpRequest request) {
@@ -44,6 +48,11 @@ public class MemberService {
 
         try {
             Member savedMember = memberRepository.save(member);
+
+            // 이벤트 발행
+            MemberSignUpEvent event = new MemberSignUpEvent(savedMember.getId());
+            eventPublisher.publishEvent(event);
+
             return savedMember.getId();
         } catch (DataIntegrityViolationException e) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);

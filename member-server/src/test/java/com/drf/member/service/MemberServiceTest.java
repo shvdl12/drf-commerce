@@ -3,6 +3,7 @@ package com.drf.member.service;
 import com.drf.member.common.exception.BusinessException;
 import com.drf.member.common.exception.ErrorCode;
 import com.drf.member.entitiy.Member;
+import com.drf.member.event.signup.MemberSignUpEvent;
 import com.drf.member.model.request.MemberSignUpRequest;
 import com.drf.member.repository.MemberRepository;
 import com.drf.member.repository.WithdrawnMemberHistoryRepository;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -23,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class MemberServiceTest {
@@ -38,6 +41,10 @@ class MemberServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
 
     private MemberSignUpRequest request;
 
@@ -69,6 +76,7 @@ class MemberServiceTest {
 
         // then
         assertThat(id).isEqualTo(1);
+        verify(eventPublisher).publishEvent(any(MemberSignUpEvent.class));
     }
 
     @Test
