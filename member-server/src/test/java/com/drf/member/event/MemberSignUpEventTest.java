@@ -13,7 +13,7 @@ public class MemberSignUpEventTest {
         // when
         MemberSignUpEvent event = new MemberSignUpEvent(1L);
 
-        // than
+        // then
         assertThat(event.getEventId()).hasSize(13);
         assertThat(event.getEventType()).isEqualTo(EventType.MEMBER_SIGN_UP);
         assertThat(event.getPayload().id()).isEqualTo(1L);
