@@ -51,6 +51,6 @@ class MemberControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value(1L));
+                .andExpect(jsonPath("$.data.id").value(1L));
     }
 }
