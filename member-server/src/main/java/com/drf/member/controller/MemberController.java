@@ -3,6 +3,7 @@ package com.drf.member.controller;
 import com.drf.member.common.model.AuthInfo;
 import com.drf.member.common.model.CommonResponse;
 import com.drf.member.model.request.MemberSignUpRequest;
+import com.drf.member.model.request.PasswordUpdateRequest;
 import com.drf.member.model.request.ProfileUpdateRequest;
 import com.drf.member.model.response.MemberSignUpResponse;
 import com.drf.member.service.MemberService;
@@ -29,6 +30,13 @@ public class MemberController {
     public ResponseEntity<Void> updateProfile(
             @RequestBody @Valid ProfileUpdateRequest request, AuthInfo authInfo) {
         memberService.updateProfile(request, authInfo);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> updatePassword(
+            @RequestBody @Valid PasswordUpdateRequest request, AuthInfo authInfo) {
+        memberService.updatePassword(request, authInfo);
         return ResponseEntity.noContent().build();
     }
 }

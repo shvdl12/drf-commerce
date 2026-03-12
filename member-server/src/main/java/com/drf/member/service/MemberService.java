@@ -6,6 +6,7 @@ import com.drf.member.common.model.AuthInfo;
 import com.drf.member.entitiy.Member;
 import com.drf.member.event.signup.MemberSignUpEvent;
 import com.drf.member.model.request.MemberSignUpRequest;
+import com.drf.member.model.request.PasswordUpdateRequest;
 import com.drf.member.model.request.ProfileUpdateRequest;
 import com.drf.member.repository.MemberRepository;
 import com.drf.member.repository.WithdrawnMemberHistoryRepository;
@@ -67,5 +68,21 @@ public class MemberService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         member.updateProfile(request.getName(), request.getPhone());
+    }
+
+    @Transactional
+    public void updatePassword(PasswordUpdateRequest request, AuthInfo authInfo) {
+        Member member = memberRepository.findById(authInfo.id())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (request.getCurrentPassword().equals(request.getNewPassword())) {
+            throw new BusinessException(ErrorCode.NEW_PASSWORD_MUST_BE_DIFFERENT);
+        }
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), member.getPassword())) {
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        member.updatePassword(passwordEncoder.encode(request.getNewPassword()));
     }
 }

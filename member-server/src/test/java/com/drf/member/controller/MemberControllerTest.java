@@ -1,6 +1,7 @@
 package com.drf.member.controller;
 
 import com.drf.member.model.request.MemberSignUpRequest;
+import com.drf.member.model.request.PasswordUpdateRequest;
 import com.drf.member.model.request.ProfileUpdateRequest;
 import com.drf.member.service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -72,7 +73,7 @@ class MemberControllerTest {
             ProfileUpdateRequest request = new ProfileUpdateRequest("홍길동", "010-9999-8888");
 
             // when & then
-            mockMvc.perform(patch("/members/me/profile")
+            mockMvc.perform(patch("/members/me")
                             .header("X-User-Id", "1")
                             .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -87,7 +88,7 @@ class MemberControllerTest {
             ProfileUpdateRequest request = new ProfileUpdateRequest("김", "010-9999-8888");
 
             // when & then
-            mockMvc.perform(patch("/members/me/profile")
+            mockMvc.perform(patch("/members/me")
                             .header("X-User-Id", "1")
                             .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
@@ -102,12 +103,62 @@ class MemberControllerTest {
             ProfileUpdateRequest request = new ProfileUpdateRequest(null, null);
 
             // when & then
-            mockMvc.perform(patch("/members/me/profile")
+            mockMvc.perform(patch("/members/me")
                             .header("X-User-Id", "1")
                             .header("X-User-Role", "USER")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isNoContent());
+        }
+    }
+
+    @Nested
+    @DisplayName("비밀번호 변경")
+    class UpdatePassword {
+
+        @Test
+        @DisplayName("비밀번호 변경 성공")
+        void updatePassword_success() throws Exception {
+            // given
+            PasswordUpdateRequest request = new PasswordUpdateRequest("currentPassword1!", "NewPassword1!");
+
+            // when & then
+            mockMvc.perform(patch("/members/me/password")
+                            .header("X-User-Id", "1")
+                            .header("X-User-Role", "USER")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @DisplayName("현재 비밀번호 공백이면 400")
+        void updatePassword_fail_blankCurrentPassword() throws Exception {
+            // given
+            PasswordUpdateRequest request = new PasswordUpdateRequest("", "NewPassword1!");
+
+            // when & then
+            mockMvc.perform(patch("/members/me/password")
+                            .header("X-User-Id", "1")
+                            .header("X-User-Role", "USER")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("새 비밀번호가 유효하지 않으면 400")
+        void updatePassword_fail_invalidNewPassword() throws Exception {
+            // given
+            PasswordUpdateRequest request = new PasswordUpdateRequest("currentPassword1!", "invalid");
+
+            // when & then
+            mockMvc.perform(patch("/members/me/password")
+                            .header("X-User-Id", "1")
+                            .header("X-User-Role", "USER")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
         }
     }
 }

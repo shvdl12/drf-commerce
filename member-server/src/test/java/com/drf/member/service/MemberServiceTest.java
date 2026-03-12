@@ -6,6 +6,7 @@ import com.drf.member.common.model.AuthInfo;
 import com.drf.member.entitiy.Member;
 import com.drf.member.event.signup.MemberSignUpEvent;
 import com.drf.member.model.request.MemberSignUpRequest;
+import com.drf.member.model.request.PasswordUpdateRequest;
 import com.drf.member.model.request.ProfileUpdateRequest;
 import com.drf.member.repository.MemberRepository;
 import com.drf.member.repository.WithdrawnMemberHistoryRepository;
@@ -220,6 +221,86 @@ class MemberServiceTest {
 
             // when & then
             assertThatThrownBy(() -> memberService.updateProfile(request, authInfo))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("비밀번호 변경")
+    class UpdatePassword {
+
+        private Member member;
+        private AuthInfo authInfo;
+
+        @BeforeEach
+        void setUp() {
+            member = Member.create(
+                    "test@test.com",
+                    "encodedPassword",
+                    "홍길동",
+                    "010-1234-5678",
+                    LocalDate.of(1995, 1, 1)
+            );
+            authInfo = new AuthInfo(1L);
+        }
+
+        @Test
+        @DisplayName("업데이트 성공")
+        void updatePassword_success() {
+            // given
+            PasswordUpdateRequest request = new PasswordUpdateRequest("currentPassword", "NewPassword1!");
+            given(memberRepository.findById(authInfo.id())).willReturn(Optional.of(member));
+            given(passwordEncoder.matches(request.getCurrentPassword(), member.getPassword())).willReturn(true);
+            given(passwordEncoder.encode(request.getNewPassword())).willReturn("newEncodedPassword");
+
+            // when
+            memberService.updatePassword(request, authInfo);
+
+            // then
+            assertThat(member.getPassword()).isEqualTo("newEncodedPassword");
+        }
+
+
+        @Test
+        @DisplayName("현재 비밀번호 불일치 시 예외 발생")
+        void updatePassword_fail_invalidCurrentPassword() {
+            // given
+            PasswordUpdateRequest request = new PasswordUpdateRequest("wrongPassword", "NewPassword1!");
+            given(memberRepository.findById(authInfo.id())).willReturn(Optional.of(member));
+            given(passwordEncoder.matches(request.getCurrentPassword(), member.getPassword())).willReturn(false);
+
+            // when & then
+            assertThatThrownBy(() -> memberService.updatePassword(request, authInfo))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.INVALID_PASSWORD);
+        }
+
+        @Test
+        @DisplayName("현재 비밀번호와 신규 비밀번호가 같으면 예외 발생")
+        void updatePassword_fail_sameAsCurrentPassword() {
+            // given
+            PasswordUpdateRequest request = new PasswordUpdateRequest("Password1!", "Password1!");
+            given(memberRepository.findById(authInfo.id())).willReturn(Optional.of(member));
+
+            // when & then
+            assertThatThrownBy(() -> memberService.updatePassword(request, authInfo))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.NEW_PASSWORD_MUST_BE_DIFFERENT);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 회원이면 예외 발생")
+        void updatePassword_fail_memberNotFound() {
+            // given
+            PasswordUpdateRequest request = new PasswordUpdateRequest("currentPassword", "NewPassword1!");
+            given(memberRepository.findById(authInfo.id())).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> memberService.updatePassword(request, authInfo))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
