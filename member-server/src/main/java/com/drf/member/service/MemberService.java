@@ -4,6 +4,8 @@ import com.drf.member.common.exception.BusinessException;
 import com.drf.member.common.exception.ErrorCode;
 import com.drf.member.common.model.AuthInfo;
 import com.drf.member.entitiy.Member;
+import com.drf.member.entitiy.MemberStatus;
+import com.drf.member.entitiy.WithdrawnMemberHistory;
 import com.drf.member.event.signup.MemberSignUpEvent;
 import com.drf.member.model.request.MemberSignUpRequest;
 import com.drf.member.model.request.PasswordUpdateRequest;
@@ -63,6 +65,7 @@ public class MemberService {
         }
     }
 
+    @Transactional(readOnly = true)
     public MemberProfileResponse getMemberProfile(AuthInfo authInfo) {
         Member member = memberRepository.findById(authInfo.id())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -92,5 +95,20 @@ public class MemberService {
         }
 
         member.updatePassword(passwordEncoder.encode(request.getNewPassword()));
+    }
+
+    @Transactional
+    public void withdrawMember(AuthInfo authInfo) {
+        Member member = memberRepository.findById(authInfo.id())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (member.getStatus() == MemberStatus.WITHDRAWN) {
+            throw new BusinessException(ErrorCode.CANNOT_WITHDRAW);
+        }
+
+        WithdrawnMemberHistory history = WithdrawnMemberHistory.create(member.getEmail());
+        withdrawnMemberHistoryRepository.save(history);
+
+        member.withdraw();
     }
 }

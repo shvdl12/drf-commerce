@@ -31,10 +31,12 @@ public class WithdrawnMemberHistory {
     @Column(nullable = false)
     private LocalDate rejoinAllowedAt;
 
-    public static WithdrawnMemberHistory create(String email, LocalDate withdrawnAt, LocalDate rejoinAllowedAt) {
+    public static WithdrawnMemberHistory create(String email) {
+        LocalDate now = LocalDate.now();
+        LocalDate rejoinAllowedAt = now.plusDays(30);
         return WithdrawnMemberHistory.builder()
                 .email(email)
-                .withdrawnAt(withdrawnAt)
+                .withdrawnAt(now)
                 .rejoinAllowedAt(rejoinAllowedAt)
                 .build();
     }

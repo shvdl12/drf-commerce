@@ -7,6 +7,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Entity
@@ -68,5 +69,12 @@ public class Member extends BaseTimeEntity {
 
     public void updatePassword(String password) {
         this.password = password;
+    }
+
+    public void withdraw() {
+        this.status = MemberStatus.WITHDRAWN;
+        this.phone = "010-0000-0000";
+        this.name = "탈퇴 회원";
+        this.email = UUID.randomUUID() + "@deleted.com";
     }
 }

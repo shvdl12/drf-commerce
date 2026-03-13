@@ -5,6 +5,7 @@ import com.drf.member.common.exception.ErrorCode;
 import com.drf.member.common.model.AuthInfo;
 import com.drf.member.entitiy.Member;
 import com.drf.member.entitiy.MemberStatus;
+import com.drf.member.entitiy.WithdrawnMemberHistory;
 import com.drf.member.event.signup.MemberSignUpEvent;
 import com.drf.member.model.request.MemberSignUpRequest;
 import com.drf.member.model.request.PasswordUpdateRequest;
@@ -356,6 +357,67 @@ class MemberServiceTest {
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("회원 탈퇴")
+    class WithdrawMember {
+
+        private Member member;
+        private AuthInfo authInfo;
+
+        @BeforeEach
+        void setUp() {
+            member = Member.create(
+                    "test@test.com",
+                    "encodedPassword",
+                    "홍길동",
+                    "010-1234-5678",
+                    LocalDate.of(1995, 1, 1)
+            );
+            authInfo = new AuthInfo(1L);
+        }
+
+        @Test
+        @DisplayName("탈퇴 성공")
+        void withdrawMember_success() {
+            // given
+            given(memberRepository.findById(authInfo.id())).willReturn(Optional.of(member));
+
+            // when
+            memberService.withdrawMember(authInfo);
+
+            // then
+            assertThat(member.getStatus()).isEqualTo(MemberStatus.WITHDRAWN);
+            then(withdrawnMemberHistoryRepository).should().save(any(WithdrawnMemberHistory.class));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 회원이면 예외 발생")
+        void withdrawMember_fail_memberNotFound() {
+            // given
+            given(memberRepository.findById(authInfo.id())).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> memberService.withdrawMember(authInfo))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("이미 탈퇴한 회원이면 예외 발생")
+        void withdrawMember_fail_alreadyWithdrawn() {
+            // given
+            member.withdraw();
+            given(memberRepository.findById(authInfo.id())).willReturn(Optional.of(member));
+
+            // when & then
+            assertThatThrownBy(() -> memberService.withdrawMember(authInfo))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.CANNOT_WITHDRAW);
         }
     }
 }

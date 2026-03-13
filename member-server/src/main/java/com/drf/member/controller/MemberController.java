@@ -46,4 +46,10 @@ public class MemberController {
         memberService.updatePassword(request, authInfo);
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<Void> withdrawMember(AuthInfo authInfo) {
+        memberService.withdrawMember(authInfo);
+        return ResponseEntity.noContent().build();
+    }
 }
