@@ -49,6 +49,18 @@ public class JwtProvider {
                 .getPayload();
     }
 
+    public Duration getRemainingExpiry(String accessToken) {
+        Date expiration = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(accessToken)
+                .getPayload()
+                .getExpiration();
+
+        long remaining = expiration.getTime() - System.currentTimeMillis();
+        return Duration.ofMillis(Math.max(remaining, 0));
+    }
+
     private String createAccessToken(Instant now, Long memberId, Role role) {
         return Jwts.builder()
                 .subject(String.valueOf(memberId))

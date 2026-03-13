@@ -26,6 +26,10 @@ public class RefreshTokenStore {
         redisTemplate.opsForValue().set(key(id, role), refreshToken, refreshTokenExpiry);
     }
 
+    public void delete(Long id, Role role) {
+        redisTemplate.delete(key(id, role));
+    }
+
     private String key(Long id, Role role) {
         return KEY_PREFIX + role.name().toLowerCase() + ":" + id;
     }

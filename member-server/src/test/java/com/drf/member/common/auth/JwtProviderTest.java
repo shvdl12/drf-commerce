@@ -30,11 +30,15 @@ class JwtProviderTest {
     void generateTokenDetails_success() {
         // when
         JwtTokenInfo tokenInfo = jwtProvider.generateTokenDetails(MEMBER_ID, ROLE);
+        String accessToken = tokenInfo.accessToken();
 
         // then
-        assertThat(tokenInfo.accessToken()).isNotBlank();
+        long toleranceSeconds = 10L;
+        assertThat(accessToken).isNotBlank();
         assertThat(tokenInfo.refreshToken()).isNotBlank();
         assertThat(tokenInfo.expiresIn()).isEqualTo(1800);
+        assertThat(jwtProvider.getRemainingExpiry(accessToken).getSeconds())
+                .isGreaterThan(1800 - toleranceSeconds);
     }
 
     @Test
