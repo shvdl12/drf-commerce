@@ -4,10 +4,12 @@ import com.drf.member.common.exception.BusinessException;
 import com.drf.member.common.exception.ErrorCode;
 import com.drf.member.common.model.AuthInfo;
 import com.drf.member.entitiy.Member;
+import com.drf.member.entitiy.MemberStatus;
 import com.drf.member.event.signup.MemberSignUpEvent;
 import com.drf.member.model.request.MemberSignUpRequest;
 import com.drf.member.model.request.PasswordUpdateRequest;
 import com.drf.member.model.request.ProfileUpdateRequest;
+import com.drf.member.model.response.MemberProfileResponse;
 import com.drf.member.repository.MemberRepository;
 import com.drf.member.repository.WithdrawnMemberHistoryRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -130,6 +132,56 @@ class MemberServiceTest {
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.REJOIN_NOT_ALLOWED);
+        }
+    }
+
+    @Nested
+    @DisplayName("회원 프로필 조회")
+    class GetMemberProfile {
+
+        private Member member;
+        private AuthInfo authInfo;
+
+        @BeforeEach
+        void setUp() {
+            member = Member.create(
+                    "test@test.com",
+                    "encodedPassword",
+                    "홍길동",
+                    "010-1234-5678",
+                    LocalDate.of(1995, 1, 1)
+            );
+            authInfo = new AuthInfo(1L);
+        }
+
+        @Test
+        @DisplayName("프로필 조회 성공")
+        void getMemberProfile_success() {
+            // given
+            given(memberRepository.findById(authInfo.id())).willReturn(Optional.of(member));
+
+            // when
+            MemberProfileResponse response = memberService.getMemberProfile(authInfo);
+
+            // then
+            assertThat(response.email()).isEqualTo("test@test.com");
+            assertThat(response.name()).isEqualTo("홍길동");
+            assertThat(response.phone()).isEqualTo("010-1234-5678");
+            assertThat(response.birthDate()).isEqualTo(LocalDate.of(1995, 1, 1));
+            assertThat(response.status()).isEqualTo(MemberStatus.ACTIVE);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 회원이면 예외 발생")
+        void getMemberProfile_fail_memberNotFound() {
+            // given
+            given(memberRepository.findById(authInfo.id())).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> memberService.getMemberProfile(authInfo))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.USER_NOT_FOUND);
         }
     }
 

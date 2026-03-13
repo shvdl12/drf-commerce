@@ -5,6 +5,7 @@ import com.drf.member.common.model.CommonResponse;
 import com.drf.member.model.request.MemberSignUpRequest;
 import com.drf.member.model.request.PasswordUpdateRequest;
 import com.drf.member.model.request.ProfileUpdateRequest;
+import com.drf.member.model.response.MemberProfileResponse;
 import com.drf.member.model.response.MemberSignUpResponse;
 import com.drf.member.service.MemberService;
 import jakarta.validation.Valid;
@@ -23,6 +24,12 @@ public class MemberController {
         Long memberId = memberService.signUp(request);
         MemberSignUpResponse response = new MemberSignUpResponse(memberId);
 
+        return ResponseEntity.ok(CommonResponse.success(response));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<CommonResponse<MemberProfileResponse>> getMemberProfile(AuthInfo authInfo) {
+        MemberProfileResponse response = memberService.getMemberProfile(authInfo);
         return ResponseEntity.ok(CommonResponse.success(response));
     }
 
