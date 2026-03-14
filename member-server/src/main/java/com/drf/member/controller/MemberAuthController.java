@@ -3,7 +3,9 @@ package com.drf.member.controller;
 import com.drf.member.common.model.AuthInfo;
 import com.drf.member.common.model.CommonResponse;
 import com.drf.member.model.request.MemberLoginRequest;
+import com.drf.member.model.request.TokenRefreshRequest;
 import com.drf.member.model.response.MemberLoginResponse;
+import com.drf.member.model.response.TokenRefreshResponse;
 import com.drf.member.service.MemberAuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,5 +39,11 @@ public class MemberAuthController {
         String accessToken = bearerToken.substring(7);
         memberAuthService.memberLogout(accessToken, authInfo);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("members/token/refresh")
+    public ResponseEntity<CommonResponse<TokenRefreshResponse>> refreshToken(@RequestBody @Valid TokenRefreshRequest request) {
+        TokenRefreshResponse response = memberAuthService.refreshToken(request);
+        return ResponseEntity.ok(CommonResponse.success(response));
     }
 }

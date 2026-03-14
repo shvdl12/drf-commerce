@@ -17,6 +17,9 @@ public enum ErrorCode {
     NEW_PASSWORD_MUST_BE_DIFFERENT(HttpStatus.UNAUTHORIZED, "현재 비밀번호와 신규 비밀번호가 같습니다."),
     CANNOT_WITHDRAW(HttpStatus.BAD_REQUEST, "탈퇴할 수 없는 상태입니다."),
 
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
+    EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "만료된 토큰입니다."),
+
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
 
     private final HttpStatus status;

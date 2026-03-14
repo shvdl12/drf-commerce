@@ -10,8 +10,13 @@ import com.drf.member.entitiy.Member;
 import com.drf.member.infrastructure.redis.AccessTokenBlacklistStore;
 import com.drf.member.infrastructure.redis.RefreshTokenStore;
 import com.drf.member.model.request.MemberLoginRequest;
+import com.drf.member.model.request.TokenRefreshRequest;
 import com.drf.member.model.response.MemberLoginResponse;
+import com.drf.member.model.response.TokenRefreshResponse;
 import com.drf.member.repository.MemberRepository;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -159,6 +164,120 @@ class MemberAuthServiceTest {
             // then
             then(refreshTokenStore).should().delete(authInfo.id(), Role.USER);
             then(accessTokenBlacklistStore).should().save(accessToken, remaining);
+        }
+    }
+
+    @Nested
+    @DisplayName("토큰 갱신")
+    class RefreshToken {
+
+        private TokenRefreshRequest request;
+        private Claims claims;
+
+        @BeforeEach
+        void setUp() {
+            request = new TokenRefreshRequest("validRefreshToken");
+            claims = mock(Claims.class);
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 성공 - 새로운 액세스/리프레시 토큰 발급")
+        void refreshToken_success() {
+            // given
+            Long memberId = 1L;
+            JwtTokenInfo jwtTokenInfo = new JwtTokenInfo("newAccessToken", "newRefreshToken", 1800);
+
+            given(jwtProvider.parseToken(request.refreshToken())).willReturn(claims);
+            given(claims.get("type", String.class)).willReturn("refresh");
+            given(claims.getSubject()).willReturn(String.valueOf(memberId));
+            given(refreshTokenStore.get(memberId, Role.USER)).willReturn(request.refreshToken());
+            given(jwtProvider.generateTokenDetails(memberId, Role.USER)).willReturn(jwtTokenInfo);
+
+            // when
+            TokenRefreshResponse response = memberAuthService.refreshToken(request);
+
+            // then
+            assertThat(response.accessToken()).isEqualTo("newAccessToken");
+            assertThat(response.refreshToken()).isEqualTo("newRefreshToken");
+            then(refreshTokenStore).should().save(memberId, Role.USER, "newRefreshToken");
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 실패 - 만료된 리프레시 토큰")
+        void refreshToken_fail_expiredToken() {
+            // given
+            given(jwtProvider.parseToken(request.refreshToken()))
+                    .willThrow(new ExpiredJwtException(null, null, "expired"));
+
+            // when & then
+            assertThatThrownBy(() -> memberAuthService.refreshToken(request))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.EXPIRED_TOKEN);
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 실패 - 서명이 유효하지 않은 토큰")
+        void refreshToken_fail_invalidSignature() {
+            // given
+            given(jwtProvider.parseToken(request.refreshToken()))
+                    .willThrow(new JwtException("invalid signature"));
+
+            // when & then
+            assertThatThrownBy(() -> memberAuthService.refreshToken(request))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.INVALID_TOKEN);
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 실패 - 액세스 토큰으로 갱신 시도")
+        void refreshToken_fail_wrongTokenType() {
+            // given
+            given(jwtProvider.parseToken(request.refreshToken())).willReturn(claims);
+            given(claims.get("type", String.class)).willReturn("access");
+
+            // when & then
+            assertThatThrownBy(() -> memberAuthService.refreshToken(request))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.INVALID_TOKEN);
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 실패 - Redis에 토큰 없음")
+        void refreshToken_fail_tokenNotInRedis() {
+            // given
+            Long memberId = 1L;
+
+            given(jwtProvider.parseToken(request.refreshToken())).willReturn(claims);
+            given(claims.get("type", String.class)).willReturn("refresh");
+            given(claims.getSubject()).willReturn(String.valueOf(memberId));
+            given(refreshTokenStore.get(memberId, Role.USER)).willReturn(null);
+
+            // when & then
+            assertThatThrownBy(() -> memberAuthService.refreshToken(request))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.INVALID_TOKEN);
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 실패 - Redis 토큰 불일치 (rotation된 토큰 재사용 시도)")
+        void refreshToken_fail_tokenMismatch() {
+            // given
+            Long memberId = 1L;
+
+            given(jwtProvider.parseToken(request.refreshToken())).willReturn(claims);
+            given(claims.get("type", String.class)).willReturn("refresh");
+            given(claims.getSubject()).willReturn(String.valueOf(memberId));
+            given(refreshTokenStore.get(memberId, Role.USER)).willReturn("alreadyRotatedToken");
+
+            // when & then
+            assertThatThrownBy(() -> memberAuthService.refreshToken(request))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.INVALID_TOKEN);
         }
     }
 }
