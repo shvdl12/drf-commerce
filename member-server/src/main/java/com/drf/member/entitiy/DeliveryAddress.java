@@ -40,4 +40,13 @@ public class DeliveryAddress extends BaseTimeEntity {
     public void unmarkDefault() {
         this.isDefault = false;
     }
+
+    public void update(String name, String phone, String address, String addressDetail, String zipCode, boolean isDefault) {
+        this.name = name;
+        this.phone = phone;
+        this.address = address;
+        this.addressDetail = addressDetail;
+        this.zipCode = zipCode;
+        this.isDefault = isDefault;
+    }
 }

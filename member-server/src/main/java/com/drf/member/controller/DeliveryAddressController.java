@@ -3,6 +3,7 @@ package com.drf.member.controller;
 import com.drf.member.common.model.AuthInfo;
 import com.drf.member.common.model.CommonResponse;
 import com.drf.member.model.request.DeliveryAddressCreateRequest;
+import com.drf.member.model.request.DeliveryAddressUpdateRequest;
 import com.drf.member.model.response.DeliveryAddressResponse;
 import com.drf.member.service.DeliveryAddressService;
 import jakarta.validation.Valid;
@@ -30,5 +31,12 @@ public class DeliveryAddressController {
     public ResponseEntity<CommonResponse<List<DeliveryAddressResponse>>> getDeliveryAddresses(AuthInfo authInfo) {
         List<DeliveryAddressResponse> response = deliveryAddressService.getDeliveryAddresses(authInfo);
         return ResponseEntity.ok(CommonResponse.success(response));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Void> getDeliveryAddresses(
+            @PathVariable long id, @RequestBody @Valid DeliveryAddressUpdateRequest request, AuthInfo authInfo) {
+        deliveryAddressService.updateDeliveryAddress(id, request, authInfo);
+        return ResponseEntity.noContent().build();
     }
 }

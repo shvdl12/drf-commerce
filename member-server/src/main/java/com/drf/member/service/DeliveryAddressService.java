@@ -6,6 +6,7 @@ import com.drf.member.common.model.AuthInfo;
 import com.drf.member.entitiy.DeliveryAddress;
 import com.drf.member.entitiy.Member;
 import com.drf.member.model.request.DeliveryAddressCreateRequest;
+import com.drf.member.model.request.DeliveryAddressUpdateRequest;
 import com.drf.member.model.response.DeliveryAddressResponse;
 import com.drf.member.repository.DeliveryAddressRepository;
 import com.drf.member.repository.MemberRepository;
@@ -58,5 +59,23 @@ public class DeliveryAddressService {
                 .stream()
                 .map(DeliveryAddressResponse::from)
                 .toList();
+    }
+
+    @Transactional
+    public void updateDeliveryAddress(Long addressId, DeliveryAddressUpdateRequest request, AuthInfo authInfo) {
+        DeliveryAddress deliveryAddress = deliveryAddressRepository.findById(addressId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.DELIVERY_ADDRESS_NOT_FOUND));
+
+        if (!deliveryAddress.getMember().getId().equals(authInfo.id())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+
+        if (request.isDefault()) {
+            deliveryAddressRepository.findByMemberAndIsDefaultTrue(deliveryAddress.getMember())
+                    .ifPresent(DeliveryAddress::unmarkDefault);
+        }
+
+        deliveryAddress.update(request.name(), request.phone(), request.address(), request.addressDetail(),
+                request.zipCode(), request.isDefault());
     }
 }

@@ -6,6 +6,7 @@ import com.drf.member.common.model.AuthInfo;
 import com.drf.member.entitiy.DeliveryAddress;
 import com.drf.member.entitiy.Member;
 import com.drf.member.model.request.DeliveryAddressCreateRequest;
+import com.drf.member.model.request.DeliveryAddressUpdateRequest;
 import com.drf.member.model.response.DeliveryAddressResponse;
 import com.drf.member.repository.DeliveryAddressRepository;
 import com.drf.member.repository.MemberRepository;
@@ -215,6 +216,104 @@ class DeliveryAddressServiceTest {
             assertThatThrownBy(() -> deliveryAddressService.getDeliveryAddresses(authInfo))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("배송지 수정")
+    class UpdateDeliveryAddress {
+
+        private DeliveryAddress deliveryAddress;
+
+        @BeforeEach
+        void setUp() {
+            deliveryAddress = DeliveryAddress.builder()
+                    .member(member)
+                    .name("집")
+                    .phone("010-1234-5678")
+                    .address("서울시 강남구")
+                    .addressDetail("101호")
+                    .zipCode("12345")
+                    .isDefault(false)
+                    .build();
+        }
+
+        @Test
+        @DisplayName("배송지를 수정한다")
+        void updateDeliveryAddress() {
+            // given
+            DeliveryAddressUpdateRequest request = new DeliveryAddressUpdateRequest(
+                    "회사", "010-9876-5432", "서울시 서초구", "202호", "54321", false);
+
+            given(deliveryAddressRepository.findById(1L)).willReturn(Optional.of(deliveryAddress));
+
+            // when
+            deliveryAddressService.updateDeliveryAddress(1L, request, authInfo);
+
+            // then
+            assertThat(deliveryAddress.getName()).isEqualTo("회사");
+            assertThat(deliveryAddress.getPhone()).isEqualTo("010-9876-5432");
+        }
+
+        @Test
+        @DisplayName("기본 배송지로 설정하면 기존 기본 배송지가 해제된다")
+        void updateDeliveryAddress_unmarkPreviousDefault() {
+            // given
+            DeliveryAddressUpdateRequest request = new DeliveryAddressUpdateRequest(
+                    "집", "010-1234-5678", "서울시 강남구", "101호", "12345", true);
+
+            DeliveryAddress previousDefault = DeliveryAddress.builder()
+                    .member(member)
+                    .name("회사")
+                    .phone("010-9876-5432")
+                    .address("서울시 서초구")
+                    .addressDetail("202호")
+                    .zipCode("54321")
+                    .isDefault(true)
+                    .build();
+
+            given(deliveryAddressRepository.findById(1L)).willReturn(Optional.of(deliveryAddress));
+            given(deliveryAddressRepository.findByMemberAndIsDefaultTrue(member)).willReturn(Optional.of(previousDefault));
+
+            // when
+            deliveryAddressService.updateDeliveryAddress(1L, request, authInfo);
+
+            // then
+            assertThat(previousDefault.isDefault()).isFalse();
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 배송지면 예외가 발생한다")
+        void updateDeliveryAddress_notFound() {
+            // given
+            DeliveryAddressUpdateRequest request = new DeliveryAddressUpdateRequest(
+                    "집", "010-1234-5678", "서울시 강남구", "101호", "12345", false);
+
+            given(deliveryAddressRepository.findById(1L)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> deliveryAddressService.updateDeliveryAddress(1L, request, authInfo))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.DELIVERY_ADDRESS_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("본인 배송지가 아니면 예외가 발생한다")
+        void updateDeliveryAddress_forbidden() {
+            // given
+            DeliveryAddressUpdateRequest request = new DeliveryAddressUpdateRequest(
+                    "집", "010-1234-5678", "서울시 강남구", "101호", "12345", false);
+
+            AuthInfo otherAuthInfo = new AuthInfo(999L);
+
+            given(deliveryAddressRepository.findById(1L)).willReturn(Optional.of(deliveryAddress));
+
+            // when & then
+            assertThatThrownBy(() -> deliveryAddressService.updateDeliveryAddress(1L, request, otherAuthInfo))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.FORBIDDEN);
         }
     }
 }
