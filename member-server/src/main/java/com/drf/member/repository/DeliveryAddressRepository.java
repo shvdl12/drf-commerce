@@ -14,4 +14,6 @@ public interface DeliveryAddressRepository extends JpaRepository<DeliveryAddress
     Optional<DeliveryAddress> findByMemberAndIsDefaultTrue(Member member);
 
     List<DeliveryAddress> findByMemberOrderByIdDesc(Member member);
+
+    Optional<DeliveryAddress> findByIdAndMemberId(Long addressId, Long memberId);
 }

@@ -26,7 +26,7 @@ public class DeliveryAddressService {
 
 
     @Transactional
-    public void register(DeliveryAddressCreateRequest request, AuthInfo authInfo) {
+    public void addDeliverAddress(DeliveryAddressCreateRequest request, AuthInfo authInfo) {
         Member member = memberRepository.findById(authInfo.id())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
@@ -77,5 +77,17 @@ public class DeliveryAddressService {
 
         deliveryAddress.update(request.name(), request.phone(), request.address(), request.addressDetail(),
                 request.zipCode(), request.isDefault());
+    }
+
+    @Transactional
+    public void deleteDeliveryAddress(Long addressId, AuthInfo authInfo) {
+        DeliveryAddress deliveryAddress = deliveryAddressRepository.findByIdAndMemberId(addressId, authInfo.id())
+                .orElseThrow(() -> new BusinessException(ErrorCode.DELIVERY_ADDRESS_NOT_FOUND));
+
+        if (deliveryAddress.isDefault()) {
+            throw new BusinessException(ErrorCode.DEFAULT_ADDRESS_CANNOT_BE_DELETED);
+        }
+
+        deliveryAddressRepository.delete(deliveryAddress);
     }
 }

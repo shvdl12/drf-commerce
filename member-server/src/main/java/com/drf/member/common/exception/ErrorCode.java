@@ -22,6 +22,7 @@ public enum ErrorCode {
 
     DELIVERY_ADDRESS_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 배송지 주소입니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+    DEFAULT_ADDRESS_CANNOT_BE_DELETED(HttpStatus.BAD_REQUEST, "기본 배송지는 삭제할 수 없습니다."),
 
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
 

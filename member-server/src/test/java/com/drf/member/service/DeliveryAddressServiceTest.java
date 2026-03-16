@@ -47,6 +47,8 @@ class DeliveryAddressServiceTest {
 
     private AuthInfo authInfo;
 
+    private DeliveryAddress deliveryAddress;
+
     @BeforeEach
     void setUp() {
         member = Member.builder()
@@ -59,6 +61,16 @@ class DeliveryAddressServiceTest {
                 .build();
 
         authInfo = new AuthInfo(1L);
+
+        deliveryAddress = DeliveryAddress.builder()
+                .member(member)
+                .name("집")
+                .phone("010-1234-5678")
+                .address("서울시 강남구")
+                .addressDetail("101호")
+                .zipCode("12345")
+                .isDefault(false)
+                .build();
     }
 
     @Nested
@@ -77,7 +89,7 @@ class DeliveryAddressServiceTest {
             given(deliveryAddressRepository.existsByMember(member)).willReturn(false);
 
             // when
-            deliveryAddressService.register(request, authInfo);
+            deliveryAddressService.addDeliverAddress(request, authInfo);
 
             // then
             then(deliveryAddressRepository).should().save(argThat(DeliveryAddress::isDefault));
@@ -106,7 +118,7 @@ class DeliveryAddressServiceTest {
                     .willReturn(Optional.of(existingDefault));
 
             // when
-            deliveryAddressService.register(request, authInfo);
+            deliveryAddressService.addDeliverAddress(request, authInfo);
 
             // then
             assertThat(existingDefault.isDefault()).isFalse();
@@ -125,7 +137,7 @@ class DeliveryAddressServiceTest {
             given(deliveryAddressRepository.existsByMember(member)).willReturn(true);
 
             // when
-            deliveryAddressService.register(request, authInfo);
+            deliveryAddressService.addDeliverAddress(request, authInfo);
 
             // then
             then(deliveryAddressRepository).should(never()).findByMemberAndIsDefaultTrue(any());
@@ -142,7 +154,7 @@ class DeliveryAddressServiceTest {
             given(memberRepository.findById(1L)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> deliveryAddressService.register(request, authInfo))
+            assertThatThrownBy(() -> deliveryAddressService.addDeliverAddress(request, authInfo))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.USER_NOT_FOUND);
@@ -314,6 +326,63 @@ class DeliveryAddressServiceTest {
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.FORBIDDEN);
+        }
+    }
+
+    @Nested
+    @DisplayName("배송지 삭제")
+    class DeleteDeliveryAddress {
+
+        @Test
+        @DisplayName("배송지를 삭제한다")
+        void deleteDeliveryAddress() {
+            // given
+            given(deliveryAddressRepository.findByIdAndMemberId(1L, authInfo.id()))
+                    .willReturn(Optional.of(deliveryAddress));
+
+            // when
+            deliveryAddressService.deleteDeliveryAddress(1L, authInfo);
+
+            // then
+            then(deliveryAddressRepository).should().delete(deliveryAddress);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 배송지면 예외가 발생한다")
+        void deleteDeliveryAddress_notFound() {
+            // given
+            given(deliveryAddressRepository.findByIdAndMemberId(1L, authInfo.id()))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> deliveryAddressService.deleteDeliveryAddress(1L, authInfo))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.DELIVERY_ADDRESS_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("기본 배송지는 삭제할 수 없다")
+        void deleteDeliveryAddress_default() {
+            // given
+            DeliveryAddress defaultAddress = DeliveryAddress.builder()
+                    .member(member)
+                    .name("집")
+                    .phone("010-1234-5678")
+                    .address("서울시 강남구")
+                    .addressDetail("101호")
+                    .zipCode("12345")
+                    .isDefault(true)
+                    .build();
+
+            given(deliveryAddressRepository.findByIdAndMemberId(1L, authInfo.id()))
+                    .willReturn(Optional.of(defaultAddress));
+
+            // when & then
+            assertThatThrownBy(() -> deliveryAddressService.deleteDeliveryAddress(1L, authInfo))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.DEFAULT_ADDRESS_CANNOT_BE_DELETED);
         }
     }
 }

@@ -21,9 +21,9 @@ public class DeliveryAddressController {
     private final DeliveryAddressService deliveryAddressService;
 
     @PostMapping
-    public ResponseEntity<Void> register(
+    public ResponseEntity<Void> addDeliverAddress(
             @RequestBody @Valid DeliveryAddressCreateRequest request, AuthInfo authInfo) {
-        deliveryAddressService.register(request, authInfo);
+        deliveryAddressService.addDeliverAddress(request, authInfo);
         return ResponseEntity.noContent().build();
     }
 
@@ -37,6 +37,12 @@ public class DeliveryAddressController {
     public ResponseEntity<Void> getDeliveryAddresses(
             @PathVariable long id, @RequestBody @Valid DeliveryAddressUpdateRequest request, AuthInfo authInfo) {
         deliveryAddressService.updateDeliveryAddress(id, request, authInfo);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteDeliveryAddress(@PathVariable long id, AuthInfo authInfo) {
+        deliveryAddressService.deleteDeliveryAddress(id, authInfo);
         return ResponseEntity.noContent().build();
     }
 }
