@@ -1,21 +1,17 @@
-package com.drf.member.Infrastructure.kafka;
+package com.drf.common.infrastructure.kafka;
 
-import com.drf.member.infrastructure.kafka.KafkaProducer;
+
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 
 import java.util.concurrent.CompletableFuture;
-
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class KafkaProducerTest {
@@ -30,21 +26,21 @@ class KafkaProducerTest {
     @DisplayName("발송 성공 시 onError를 호출하지 않는다")
     void sendMessage_success_onErrorNotCalled() {
         // given
-        SendResult<String, String> sendResult = mock(SendResult.class);
+        SendResult<String, String> sendResult = Mockito.mock(SendResult.class);
         TopicPartition partition = new TopicPartition("topic", 0);
         RecordMetadata metadata = new RecordMetadata(partition, 0L, 0, 0L, 0, 0);
-        given(sendResult.getRecordMetadata()).willReturn(metadata);
+        BDDMockito.given(sendResult.getRecordMetadata()).willReturn(metadata);
 
         CompletableFuture<SendResult<String, String>> future = CompletableFuture.completedFuture(sendResult);
-        given(kafkaTemplate.send(anyString(), anyString(), anyString())).willReturn(future);
+        BDDMockito.given(kafkaTemplate.send(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).willReturn(future);
 
-        Runnable onError = mock(Runnable.class);
+        Runnable onError = Mockito.mock(Runnable.class);
 
         // when
         kafkaProducer.sendMessage("topic", "key", "payload", onError);
 
         // then
-        then(onError).should(never()).run();
+        BDDMockito.then(onError).should(Mockito.never()).run();
     }
 
     @Test
@@ -54,30 +50,30 @@ class KafkaProducerTest {
         CompletableFuture<SendResult<String, String>> future = CompletableFuture.failedFuture(
                 new RuntimeException()
         );
-        given(kafkaTemplate.send(anyString(), anyString(), anyString())).willReturn(future);
+        BDDMockito.given(kafkaTemplate.send(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).willReturn(future);
 
-        Runnable onError = mock(Runnable.class);
+        Runnable onError = Mockito.mock(Runnable.class);
 
         // when
         kafkaProducer.sendMessage("topic", "key", "payload", onError);
 
         // then
-        then(onError).should(times(1)).run();
+        BDDMockito.then(onError).should(Mockito.times(1)).run();
     }
 
     @Test
     @DisplayName("동기 예외 발생 시 onError를 호출한다")
     void sendMessage_syncException_onErrorCalled() {
         // given
-        given(kafkaTemplate.send(anyString(), anyString(), anyString()))
+        BDDMockito.given(kafkaTemplate.send(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
                 .willThrow(new RuntimeException());
 
-        Runnable onError = mock(Runnable.class);
+        Runnable onError = Mockito.mock(Runnable.class);
 
         // when
         kafkaProducer.sendMessage("topic", "key", "payload", onError);
 
         // then
-        then(onError).should(times(1)).run();
+        BDDMockito.then(onError).should(Mockito.times(1)).run();
     }
 }

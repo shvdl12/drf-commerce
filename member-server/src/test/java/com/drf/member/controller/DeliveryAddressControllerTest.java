@@ -2,27 +2,18 @@ package com.drf.member.controller;
 
 import com.drf.member.model.request.DeliveryAddressCreateRequest;
 import com.drf.member.service.DeliveryAddressService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(value = DeliveryAddressController.class)
-class DeliveryAddressControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+class DeliveryAddressControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private DeliveryAddressService deliveryAddressService;

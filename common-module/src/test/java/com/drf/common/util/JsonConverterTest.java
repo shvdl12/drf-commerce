@@ -1,6 +1,6 @@
-package com.drf.member.common.util;
+package com.drf.common.util;
 
-import com.drf.member.event.MemberSignUpEvent;
+import com.drf.common.event.BaseEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,16 +28,25 @@ class JsonConverterTest {
     @DisplayName("객체를 JSON 문자열로 직렬화한다")
     void toJson_success() {
         // given
-        MemberSignUpEvent event = new MemberSignUpEvent(1L);
+        BaseEvent<?> event = new TestEvent(1L);
 
         // when
         String result = jsonConverter.toJson(event);
 
         // then
-        assertThat(result).contains("\"eventType\":\"MEMBER_SIGN_UP\"");
+        assertThat(result).contains("\"eventType\":\"TEST_EVENT\"");
         assertThat(result).contains("\"payload\":{\"id\":1}");
         assertThat(result).contains("\"eventId\":");
         assertThat(result).contains("\"occurredAt\":");
+    }
+
+    private record TestPayload(Long id) {
+    }
+
+    private static class TestEvent extends BaseEvent<TestPayload> {
+        public TestEvent(Long id) {
+            super("TEST_EVENT", new TestPayload(id));
+        }
     }
 
     @Test

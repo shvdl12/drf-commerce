@@ -1,5 +1,6 @@
 package com.drf.member.common.auth;
 
+import com.drf.common.model.Role;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
