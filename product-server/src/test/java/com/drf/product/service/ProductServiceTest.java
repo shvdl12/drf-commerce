@@ -7,6 +7,7 @@ import com.drf.product.entity.Product;
 import com.drf.product.entity.ProductStatus;
 import com.drf.product.entity.ProductStock;
 import com.drf.product.event.ProductCreatedEvent;
+import com.drf.product.event.ProductDeletedEvent;
 import com.drf.product.event.ProductUpdatedEvent;
 import com.drf.product.model.request.ProductCreateRequest;
 import com.drf.product.model.request.ProductUpdateRequest;
@@ -26,6 +27,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -266,6 +268,48 @@ public class ProductServiceTest {
             // when & then
             assertThatThrownBy(() -> productService.updateProduct(1L, request))
                     .isInstanceOf(BusinessException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 삭제")
+    class DeleteProduct {
+        private Product product;
+
+        @BeforeEach
+        void setUp() {
+            product = Product.builder()
+                    .id(1L)
+                    .name("상품명")
+                    .price(10000)
+                    .build();
+        }
+
+        @Test
+        @DisplayName("상품이 존재하면 상품을 삭제하고 이벤트를 발행한다")
+        void success() {
+            // given
+            given(productRepository.findById(1L)).willReturn(Optional.of(product));
+
+            // when
+            productService.deleteProduct(1L);
+
+            // then
+            assertThat(product.getStatus()).isEqualTo(ProductStatus.DELETED);
+            assertThat(product.getDeletedAt()).isNotNull();
+            then(eventPublisher).should().publishEvent(any(ProductDeletedEvent.class));
+        }
+
+        @Test
+        @DisplayName("상품이 존재하지 않으면 예외를 던진다")
+        void fail_productNotFound() {
+            // given
+            given(productRepository.findById(1L)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> productService.deleteProduct(1L))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.PRODUCT_NOT_FOUND);
         }
     }
 }

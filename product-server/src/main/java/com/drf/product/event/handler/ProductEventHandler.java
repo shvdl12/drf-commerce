@@ -1,6 +1,7 @@
 package com.drf.product.event.handler;
 
 import com.drf.product.event.ProductCreatedEvent;
+import com.drf.product.event.ProductDeletedEvent;
 import com.drf.product.event.ProductUpdatedEvent;
 import com.drf.product.repository.ProductStockRedisRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,11 @@ public class ProductEventHandler {
     public void handleUpdatedProductEvent(ProductUpdatedEvent event) {
         ProductUpdatedEvent.Payload payload = event.getPayload();
         setStock(payload.id(), payload.stock());
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleDeletedProductEvent(ProductDeletedEvent event) {
+        productStockRedisRepository.deleteStock(event.getPayload().id());
     }
 
     private void setStock(long productId, int stock) {

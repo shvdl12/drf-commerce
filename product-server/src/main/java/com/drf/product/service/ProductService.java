@@ -6,6 +6,7 @@ import com.drf.product.entity.Category;
 import com.drf.product.entity.Product;
 import com.drf.product.entity.ProductStock;
 import com.drf.product.event.ProductCreatedEvent;
+import com.drf.product.event.ProductDeletedEvent;
 import com.drf.product.event.ProductUpdatedEvent;
 import com.drf.product.model.request.ProductCreateRequest;
 import com.drf.product.model.request.ProductUpdateRequest;
@@ -73,6 +74,16 @@ public class ProductService {
                 category, request.name(), request.price(), request.description(),
                 request.discountRate(), request.saleStartAt(), request.saleEndAt()
         );
+    }
+
+    @Transactional
+    public void deleteProduct(long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        product.delete();
+
+        eventPublisher.publishEvent(new ProductDeletedEvent(id));
     }
 
     private void validateDateRange(LocalDateTime startAt, LocalDateTime endAt) {

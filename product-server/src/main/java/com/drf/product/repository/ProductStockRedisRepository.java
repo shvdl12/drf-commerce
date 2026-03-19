@@ -14,6 +14,10 @@ public class ProductStockRedisRepository {
         redisTemplate.opsForValue().set(generateKey(productId), String.valueOf(stock));
     }
 
+    public boolean deleteStock(long productId) {
+        return redisTemplate.delete(generateKey(productId));
+    }
+
     private String generateKey(long productId) {
         return REDIS_STOCK_KEY_PREFIX + productId;
     }

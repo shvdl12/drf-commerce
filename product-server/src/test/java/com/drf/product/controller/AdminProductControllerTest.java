@@ -1,5 +1,7 @@
 package com.drf.product.controller;
 
+import com.drf.common.exception.BusinessException;
+import com.drf.product.common.exception.ErrorCode;
 import com.drf.product.model.request.ProductCreateRequest;
 import com.drf.product.model.request.ProductUpdateRequest;
 import com.drf.product.service.ProductService;
@@ -13,9 +15,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.BDDMockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -53,6 +55,35 @@ public class AdminProductControllerTest extends BaseControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data.id").value(1L));
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 삭제")
+    class DeleteProduct {
+
+        @Test
+        @DisplayName("삭제 성공")
+        void deleteProduct_success() throws Exception {
+            willDoNothing().given(productService).deleteProduct(anyLong());
+
+            mockMvc.perform(delete("/admin/products/1")
+                            .header("X-User-Id", 1)
+                            .header("X-User-Role", "ADMIN"))
+                    .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 상품 삭제 시 404 반환")
+        void deleteProduct_notFound() throws Exception {
+            willThrow(new BusinessException(ErrorCode.PRODUCT_NOT_FOUND))
+                    .given(productService).deleteProduct(anyLong());
+
+            mockMvc.perform(delete("/admin/products/999")
+                            .header("X-User-Id", 1)
+                            .header("X-User-Role", "ADMIN"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message").value(ErrorCode.PRODUCT_NOT_FOUND.getMessage()));
         }
     }
 

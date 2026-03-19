@@ -69,4 +69,9 @@ public class Product extends BaseTimeEntity {
         if (saleStartAt != null) this.saleStartAt = saleStartAt;
         if (saleEndAt != null) this.saleEndAt = saleEndAt;
     }
+
+    public void delete() {
+        this.status = ProductStatus.DELETED;
+        this.deletedAt = LocalDateTime.now();
+    }
 }
