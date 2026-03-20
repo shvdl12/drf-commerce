@@ -4,6 +4,7 @@ import com.drf.common.exception.BusinessException;
 import com.drf.product.common.exception.ErrorCode;
 import com.drf.product.entity.Category;
 import com.drf.product.model.request.CategoryCreateRequest;
+import com.drf.product.model.request.CategoryUpdateRequest;
 import com.drf.product.model.response.CategoryTreeResponse;
 import com.drf.product.repository.CategoryRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -171,6 +173,69 @@ public class CategoryServiceTest {
             assertThat(childNode.name()).isEqualTo("스마트폰");
             assertThat(childNode.children()).hasSize(1);
             assertThat(childNode.children().getFirst().name()).isEqualTo("안드로이드");
+        }
+    }
+
+    @Nested
+    @DisplayName("카테고리 수정")
+    class UpdateCategory {
+
+        @Test
+        @DisplayName("루트 카테고리 이름 수정 성공")
+        void updateCategory_success_root() {
+            // given
+            Category category = Category.builder().id(1L).name("전자제품").build();
+            given(categoryRepository.findById(1L)).willReturn(Optional.of(category));
+            given(categoryRepository.existsByParentIdAndName(null, "가전제품")).willReturn(false);
+
+            // when
+            categoryService.updateCategory(1L, new CategoryUpdateRequest("가전제품"));
+
+            // then
+            assertThat(category.getName()).isEqualTo("가전제품");
+        }
+
+        @Test
+        @DisplayName("하위 카테고리 이름 수정 성공")
+        void updateCategory_success_child() {
+            // given
+            Category parent = Category.builder().id(1L).name("전자제품").build();
+            Category category = Category.builder().id(2L).name("스마트폰").parent(parent).build();
+            given(categoryRepository.findById(2L)).willReturn(Optional.of(category));
+            given(categoryRepository.existsByParentIdAndName(1L, "태블릿")).willReturn(false);
+
+            // when
+            categoryService.updateCategory(2L, new CategoryUpdateRequest("태블릿"));
+
+            // then
+            assertThat(category.getName()).isEqualTo("태블릿");
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 카테고리 수정 시 예외 발생")
+        void updateCategory_notFound() {
+            // given
+            given(categoryRepository.findById(99L)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> categoryService.updateCategory(99L, new CategoryUpdateRequest("가전제품")))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CATEGORY_NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("동일 계층 내 이름 중복 시 예외 발생")
+        void updateCategory_duplicateName() {
+            // given
+            Category parent = Category.builder().id(1L).name("전자제품").build();
+            Category category = Category.builder().id(2L).name("스마트폰").parent(parent).build();
+            given(categoryRepository.findById(2L)).willReturn(Optional.of(category));
+            given(categoryRepository.existsByParentIdAndName(1L, "태블릿")).willReturn(true);
+
+            // when & then
+            assertThatThrownBy(() -> categoryService.updateCategory(2L, new CategoryUpdateRequest("태블릿")))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", ErrorCode.DUPLICATE_CATEGORY_NAME);
         }
     }
 }

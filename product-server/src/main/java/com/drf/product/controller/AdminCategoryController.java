@@ -2,16 +2,14 @@ package com.drf.product.controller;
 
 import com.drf.common.model.CommonResponse;
 import com.drf.product.model.request.CategoryCreateRequest;
+import com.drf.product.model.request.CategoryUpdateRequest;
 import com.drf.product.model.response.CategoryCreateResponse;
 import com.drf.product.model.response.CategoryTreeResponse;
 import com.drf.product.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -31,5 +29,12 @@ public class AdminCategoryController {
     @GetMapping("/categories")
     public ResponseEntity<CommonResponse<List<CategoryTreeResponse>>> getCategories() {
         return ResponseEntity.ok(CommonResponse.success(categoryService.getCategories()));
+    }
+
+    @PostMapping("/categories/{id}")
+    public ResponseEntity<Void> updateCategory(
+            @PathVariable long id, @Valid @RequestBody CategoryUpdateRequest request) {
+        categoryService.updateCategory(id, request);
+        return ResponseEntity.noContent().build();
     }
 }

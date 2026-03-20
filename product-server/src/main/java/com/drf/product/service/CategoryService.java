@@ -4,6 +4,7 @@ import com.drf.common.exception.BusinessException;
 import com.drf.product.common.exception.ErrorCode;
 import com.drf.product.entity.Category;
 import com.drf.product.model.request.CategoryCreateRequest;
+import com.drf.product.model.request.CategoryUpdateRequest;
 import com.drf.product.model.response.CategoryTreeResponse;
 import com.drf.product.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -68,5 +69,19 @@ public class CategoryService {
         }
 
         return roots;
+    }
+
+    @Transactional
+    public void updateCategory(Long categoryId, CategoryUpdateRequest request) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CATEGORY_NOT_FOUND));
+
+        Long parentId = category.getParent() != null ? category.getParent().getId() : null;
+
+        if (categoryRepository.existsByParentIdAndName(parentId, request.name())) {
+            throw new BusinessException(ErrorCode.DUPLICATE_CATEGORY_NAME);
+        }
+
+        category.updateName(request.name());
     }
 }

@@ -4,6 +4,7 @@ package com.drf.product.entity;
 import com.drf.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.util.StringUtils;
 
 @Getter
 @Entity
@@ -29,5 +30,11 @@ public class Category extends BaseTimeEntity {
                 .parent(parent)
                 .name(name)
                 .build();
+    }
+
+    public void updateName(String name) {
+        if (StringUtils.hasText(name)) {
+            this.name = name;
+        }
     }
 }
