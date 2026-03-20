@@ -23,4 +23,11 @@ public class Category extends BaseTimeEntity {
 
     @Column(nullable = false, length = 50)
     private String name;
+
+    public static Category create(Category parent, String name) {
+        return Category.builder()
+                .parent(parent)
+                .name(name)
+                .build();
+    }
 }
