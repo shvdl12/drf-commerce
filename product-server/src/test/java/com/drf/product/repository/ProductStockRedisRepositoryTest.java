@@ -82,4 +82,32 @@ class ProductStockRedisRepositoryTest {
         // then
         assertThat(result).isEqualTo(-2);
     }
+
+    @Test
+    @DisplayName("재고 해제 성공 - 복원 후 남은 재고를 반환한다")
+    void releaseStock_success() {
+        // given
+        given(redisTemplate.execute(any(RedisScript.class), anyList(), anyString()))
+                .willReturn(100L);
+
+        // when
+        int result = productStockRedisRepository.releaseStock(1L, 10);
+
+        // then
+        assertThat(result).isEqualTo(100);
+    }
+
+    @Test
+    @DisplayName("재고 해제 시 Redis에 키가 없으면 -1을 반환한다")
+    void releaseStock_keyNotFound() {
+        // given
+        given(redisTemplate.execute(any(RedisScript.class), anyList(), anyString()))
+                .willReturn(-1L);
+
+        // when
+        int result = productStockRedisRepository.releaseStock(1L, 10);
+
+        // then
+        assertThat(result).isEqualTo(-1);
+    }
 }

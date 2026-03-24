@@ -36,6 +36,20 @@ public class ProductStockRedisRepository {
         return result.intValue();
     }
 
+    public int releaseStock(long productId, int quantity) {
+        Long result = redisTemplate.execute(
+                new DefaultRedisScript<>(
+                        "local current = redis.call('GET', KEYS[1]) " +
+                                "if current == false then return -1 end " +
+                                "return redis.call('INCRBY', KEYS[1], ARGV[1])",
+                        Long.class
+                ),
+                List.of(generateKey(productId)),
+                String.valueOf(quantity)
+        );
+        return result.intValue();
+    }
+
     private String generateKey(long productId) {
         return REDIS_STOCK_KEY_PREFIX + productId;
     }
