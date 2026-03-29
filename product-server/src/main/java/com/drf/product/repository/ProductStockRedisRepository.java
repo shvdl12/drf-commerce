@@ -11,6 +11,21 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductStockRedisRepository {
     private static final String REDIS_STOCK_KEY_PREFIX = "product:stock:";
+
+    private static final DefaultRedisScript<Long> RESERVE_STOCK_SCRIPT = new DefaultRedisScript<>("""
+            local current = redis.call('GET', KEYS[1])
+            if current == false then return -1 end
+            if tonumber(current) < tonumber(ARGV[1]) then return -2 end
+            return redis.call('DECRBY', KEYS[1], ARGV[1])
+            """);
+
+    private static final DefaultRedisScript<Long> RELEASE_STOCK_SCRIPT = new DefaultRedisScript<>("""
+            local current = redis.call('GET', KEYS[1])
+            if current == false then return -1 end
+            return redis.call('INCRBY', KEYS[1], ARGV[1])
+            """);
+
+
     private final StringRedisTemplate redisTemplate;
 
     public void setStock(long productId, int stock) {
@@ -22,31 +37,12 @@ public class ProductStockRedisRepository {
     }
 
     public int reserveStock(long productId, int quantity) {
-        Long result = redisTemplate.execute(
-                new DefaultRedisScript<>(
-                        "local current = redis.call('GET', KEYS[1]) " +
-                                "if current == false then return -1 end " +
-                                "if tonumber(current) < tonumber(ARGV[1]) then return -2 end " +
-                                "return redis.call('DECRBY', KEYS[1], ARGV[1])",
-                        Long.class
-                ),
-                List.of(generateKey(productId)),
-                String.valueOf(quantity)
-        );
+        Long result = redisTemplate.execute(RESERVE_STOCK_SCRIPT, List.of(generateKey(productId)), String.valueOf(quantity));
         return result.intValue();
     }
 
     public int releaseStock(long productId, int quantity) {
-        Long result = redisTemplate.execute(
-                new DefaultRedisScript<>(
-                        "local current = redis.call('GET', KEYS[1]) " +
-                                "if current == false then return -1 end " +
-                                "return redis.call('INCRBY', KEYS[1], ARGV[1])",
-                        Long.class
-                ),
-                List.of(generateKey(productId)),
-                String.valueOf(quantity)
-        );
+        Long result = redisTemplate.execute(RELEASE_STOCK_SCRIPT, List.of(generateKey(productId)), String.valueOf(quantity));
         return result.intValue();
     }
 
