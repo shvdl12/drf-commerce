@@ -21,6 +21,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import org.mockito.ArgumentCaptor;
+
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -94,7 +96,7 @@ class IdempotencyAspectTest {
         // given
         given(idempotent.scope()).willReturn(SCOPE);
         given(idempotencyStore.findCachedResponse(IDEMPOTENCY_KEY, SCOPE)).willReturn(Optional.empty());
-        given(idempotencyLock.acquire(IDEMPOTENCY_KEY, SCOPE)).willReturn(false);
+        given(idempotencyLock.acquire(eq(IDEMPOTENCY_KEY), eq(SCOPE), anyString())).willReturn(false);
 
         // when & then
         assertThatThrownBy(() -> idempotencyAspect.checkIdempotency(joinPoint, idempotent))
@@ -103,12 +105,14 @@ class IdempotencyAspectTest {
     }
 
     @Test
-    @DisplayName("캐시 미스 - 락 획득 후 실행하고 저장한 뒤 락을 해제한다")
+    @DisplayName("캐시 미스 - acquire와 release에 동일한 token이 전달된다")
     void cacheMiss_executesAndSavesAndReleasesLock() throws Throwable {
         // given
         given(idempotent.scope()).willReturn(SCOPE);
         given(idempotencyStore.findCachedResponse(IDEMPOTENCY_KEY, SCOPE)).willReturn(Optional.empty());
-        given(idempotencyLock.acquire(IDEMPOTENCY_KEY, SCOPE)).willReturn(true);
+
+        ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
+        given(idempotencyLock.acquire(eq(IDEMPOTENCY_KEY), eq(SCOPE), tokenCaptor.capture())).willReturn(true);
 
         CommonResponse<StockReserveResponse> body = CommonResponse.success(new StockReserveResponse(1L, 90));
         ResponseEntity<CommonResponse<StockReserveResponse>> result = ResponseEntity.ok(body);
@@ -121,24 +125,27 @@ class IdempotencyAspectTest {
         // then
         assertThat(returned).isSameAs(result);
         then(idempotencyStore).should().saveResponse(IDEMPOTENCY_KEY, SCOPE, 200, "{\"code\":\"SUCCESS\"}");
-        then(idempotencyLock).should().release(IDEMPOTENCY_KEY, SCOPE);
+        String capturedToken = tokenCaptor.getValue();
+        then(idempotencyLock).should().release(IDEMPOTENCY_KEY, SCOPE, capturedToken);
     }
 
     @Test
-    @DisplayName("실행 중 예외가 발생해도 락은 반드시 해제된다")
+    @DisplayName("실행 중 예외가 발생해도 acquire와 동일한 token으로 락이 해제된다")
     void exceptionDuringExecution_lockAlwaysReleased() throws Throwable {
         // given
         given(idempotent.scope()).willReturn(SCOPE);
         given(idempotencyStore.findCachedResponse(IDEMPOTENCY_KEY, SCOPE)).willReturn(Optional.empty());
-        given(idempotencyLock.acquire(IDEMPOTENCY_KEY, SCOPE)).willReturn(true);
+
+        ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
+        given(idempotencyLock.acquire(eq(IDEMPOTENCY_KEY), eq(SCOPE), tokenCaptor.capture())).willReturn(true);
         given(joinPoint.proceed()).willAnswer(inv -> {
             throw new RuntimeException("서비스 오류");
         });
 
-
         // when & then
         assertThatThrownBy(() -> idempotencyAspect.checkIdempotency(joinPoint, idempotent))
                 .isInstanceOf(RuntimeException.class);
-        then(idempotencyLock).should().release(IDEMPOTENCY_KEY, SCOPE);
+        String capturedToken = tokenCaptor.getValue();
+        then(idempotencyLock).should().release(IDEMPOTENCY_KEY, SCOPE, capturedToken);
     }
 }

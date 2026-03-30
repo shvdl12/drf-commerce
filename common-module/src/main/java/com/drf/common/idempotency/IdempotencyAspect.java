@@ -16,6 +16,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Aspect
 @Component
@@ -45,7 +46,8 @@ public class IdempotencyAspect {
         }
 
         // 분산 락 선점 시도
-        if (!idempotencyLock.acquire(idempotencyKey, scope)) {
+        String lockToken = UUID.randomUUID().toString();
+        if (!idempotencyLock.acquire(idempotencyKey, scope, lockToken)) {
             throw new BusinessException(CommonErrorCode.IDEMPOTENCY_CONFLICT);
         }
 
@@ -61,7 +63,7 @@ public class IdempotencyAspect {
             }
             return result;
         } finally {
-            idempotencyLock.release(idempotencyKey, scope);
+            idempotencyLock.release(idempotencyKey, scope, lockToken);
         }
     }
 
