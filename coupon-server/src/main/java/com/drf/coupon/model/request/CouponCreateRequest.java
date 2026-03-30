@@ -1,0 +1,44 @@
+package com.drf.coupon.model.request;
+
+import com.drf.coupon.entity.ApplyType;
+import com.drf.coupon.entity.DiscountType;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Builder;
+
+import java.time.LocalDateTime;
+
+@Builder
+public record CouponCreateRequest(
+        @NotBlank @Size(max = 100)
+        String name,
+
+        @NotNull
+        DiscountType discountType,
+
+        @NotNull @Min(1)
+        Integer discountValue,
+
+        @NotNull @Min(1)
+        Integer totalQuantity,
+
+        @NotNull @Min(0)
+        Integer minOrderAmount,
+
+        @Min(1)
+        Integer maxDiscountAmount,
+
+        @NotNull
+        ApplyType applyType,
+
+        Long applyTargetId,
+
+        @NotNull
+        LocalDateTime validFrom,
+
+        @NotNull
+        LocalDateTime validUntil
+) {
+}
