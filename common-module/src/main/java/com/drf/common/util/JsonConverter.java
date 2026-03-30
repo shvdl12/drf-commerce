@@ -41,4 +41,12 @@ public class JsonConverter {
             throw new RuntimeException("Failed to convert JSON node to object", e);
         }
     }
+
+    public <T> T fromJson(String json, Class<T> type) {
+        try {
+            return objectMapper.readValue(json, type);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Failed to deserialize JSON to " + type.getSimpleName(), e);
+        }
+    }
 }

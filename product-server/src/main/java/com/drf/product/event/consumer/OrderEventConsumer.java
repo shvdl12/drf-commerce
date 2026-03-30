@@ -1,9 +1,9 @@
 package com.drf.product.event.consumer;
 
+import com.drf.common.event.EventEnvelope;
 import com.drf.common.util.JsonConverter;
 import com.drf.product.event.payload.PaymentCompletedPayload;
 import com.drf.product.event.payload.RefundCompletedPayload;
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -26,27 +26,26 @@ public class OrderEventConsumer {
 
     @RetryableTopic(
             backoff = @Backoff(delay = 1000, multiplier = 2.0),
-            topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE
+            topicSuffixingStrategy = TopicSuffixingStrategy.SUFFIX_WITH_INDEX_VALUE,
+            exclude = {IllegalArgumentException.class}
     )
     @KafkaListener(topics = "#{T(com.drf.common.event.EventTopic).ORDER.getName()}")
     public void consume(String message) {
         long eventId = 0L;
         try {
-            JsonNode root = jsonConverter.toJsonNode(message);
-            eventId = root.get("eventId").asLong();
-            String eventType = root.get("eventType").asText();
-            JsonNode payload = root.get("payload");
+            EventEnvelope envelope = jsonConverter.fromJson(message, EventEnvelope.class);
+            eventId = envelope.eventId();
 
-            switch (eventType) {
+            switch (envelope.eventType()) {
                 case "PAYMENT_COMPLETED" -> {
-                    PaymentCompletedPayload p = jsonConverter.treeToValue(payload, PaymentCompletedPayload.class);
+                    PaymentCompletedPayload p = jsonConverter.treeToValue(envelope.payload(), PaymentCompletedPayload.class);
                     orderEventProcessor.processPaymentCompleted(eventId, p.productId(), p.quantity());
                 }
                 case "REFUND_COMPLETED" -> {
-                    RefundCompletedPayload p = jsonConverter.treeToValue(payload, RefundCompletedPayload.class);
+                    RefundCompletedPayload p = jsonConverter.treeToValue(envelope.payload(), RefundCompletedPayload.class);
                     orderEventProcessor.processRefundCompleted(eventId, p.productId(), p.quantity());
                 }
-                default -> log.warn("Unknown order event type: {}", eventType);
+                default -> log.warn("Unknown order event type: {}", envelope.eventType());
             }
         } catch (DataIntegrityViolationException e) {
             log.info("Duplicate event skipped. eventId={}", eventId);

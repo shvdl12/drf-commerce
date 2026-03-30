@@ -1,8 +1,10 @@
 package com.drf.product.event.consumer;
 
+import com.drf.common.event.EventEnvelope;
 import com.drf.common.util.JsonConverter;
 import com.drf.product.event.payload.PaymentCompletedPayload;
 import com.drf.product.event.payload.RefundCompletedPayload;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,12 +17,13 @@ import org.springframework.dao.DataIntegrityViolationException;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class OrderEventConsumerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
     @Mock
     private OrderEventProcessor orderEventProcessor;
     @Mock
@@ -39,9 +42,10 @@ class OrderEventConsumerTest {
                   "payload": { "productId": 1, "quantity": 10 }
                 }
                 """;
-        org.mockito.BDDMockito.given(jsonConverter.toJsonNode(message))
-                .willReturn(objectMapper.readTree(message));
-        org.mockito.BDDMockito.given(jsonConverter.treeToValue(any(), eq(PaymentCompletedPayload.class)))
+        JsonNode payload = objectMapper.readTree("{\"productId\": 1, \"quantity\": 10}");
+        given(jsonConverter.fromJson(message, EventEnvelope.class))
+                .willReturn(new EventEnvelope(123456789L, "PAYMENT_COMPLETED", payload));
+        given(jsonConverter.treeToValue(any(), eq(PaymentCompletedPayload.class)))
                 .willReturn(new PaymentCompletedPayload(1L, 10));
 
         // when
@@ -62,9 +66,10 @@ class OrderEventConsumerTest {
                   "payload": { "productId": 1, "quantity": 10 }
                 }
                 """;
-        org.mockito.BDDMockito.given(jsonConverter.toJsonNode(message))
-                .willReturn(objectMapper.readTree(message));
-        org.mockito.BDDMockito.given(jsonConverter.treeToValue(any(), eq(RefundCompletedPayload.class)))
+        JsonNode payload = objectMapper.readTree("{\"productId\": 1, \"quantity\": 10}");
+        given(jsonConverter.fromJson(message, EventEnvelope.class))
+                .willReturn(new EventEnvelope(987654321L, "REFUND_COMPLETED", payload));
+        given(jsonConverter.treeToValue(any(), eq(RefundCompletedPayload.class)))
                 .willReturn(new RefundCompletedPayload(1L, 10));
 
         // when
@@ -85,11 +90,12 @@ class OrderEventConsumerTest {
                   "payload": { "productId": 1, "quantity": 10 }
                 }
                 """;
-        org.mockito.BDDMockito.given(jsonConverter.toJsonNode(message))
-                .willReturn(objectMapper.readTree(message));
-        org.mockito.BDDMockito.given(jsonConverter.treeToValue(any(), eq(PaymentCompletedPayload.class)))
+        JsonNode payload = objectMapper.readTree("{\"productId\": 1, \"quantity\": 10}");
+        given(jsonConverter.fromJson(message, EventEnvelope.class))
+                .willReturn(new EventEnvelope(111111111L, "PAYMENT_COMPLETED", payload));
+        given(jsonConverter.treeToValue(any(), eq(PaymentCompletedPayload.class)))
                 .willReturn(new PaymentCompletedPayload(1L, 10));
-        org.mockito.BDDMockito.willThrow(new DataIntegrityViolationException("duplicate"))
+        willThrow(new DataIntegrityViolationException("duplicate"))
                 .given(orderEventProcessor).processPaymentCompleted(anyLong(), anyLong(), anyInt());
 
         // when & then
@@ -107,8 +113,9 @@ class OrderEventConsumerTest {
                   "payload": { "productId": 1, "quantity": 10 }
                 }
                 """;
-        org.mockito.BDDMockito.given(jsonConverter.toJsonNode(message))
-                .willReturn(objectMapper.readTree(message));
+        JsonNode payload = objectMapper.readTree("{\"productId\": 1, \"quantity\": 10}");
+        given(jsonConverter.fromJson(message, EventEnvelope.class))
+                .willReturn(new EventEnvelope(999999999L, "UNKNOWN_EVENT", payload));
 
         // when & then
         assertThatNoException().isThrownBy(() -> orderEventConsumer.consume(message));
@@ -116,17 +123,16 @@ class OrderEventConsumerTest {
     }
 
     @Test
-    @DisplayName("잘못된 JSON 메시지는 예외가 발생한다 - RetryableTopic을 통해 DLT로 이동")
-    void invalidJson_throwsException() {
+    @DisplayName("잘못된 JSON 메시지는 IllegalArgumentException이 발생한다 - RetryableTopic을 통해 DLT로 이동")
+    void invalidJson_throwsIllegalArgumentException() {
         // given
         String message = "invalid-json";
-        org.mockito.BDDMockito.given(jsonConverter.toJsonNode(message))
-                .willThrow(new RuntimeException("JSON parse error"));
+        given(jsonConverter.fromJson(message, EventEnvelope.class))
+                .willThrow(new IllegalArgumentException("Failed to deserialize JSON to EventEnvelope"));
 
         // when & then
         assertThatThrownBy(() -> orderEventConsumer.consume(message))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("JSON parse error");
+                .isInstanceOf(IllegalArgumentException.class);
         then(orderEventProcessor).shouldHaveNoInteractions();
     }
 }
