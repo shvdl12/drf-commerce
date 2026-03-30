@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -18,9 +19,11 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import java.util.Optional;
 import java.util.UUID;
 
+
 @Aspect
 @Component
 @RequiredArgsConstructor
+@ConditionalOnBean({IdempotencyLock.class, IdempotencyStore.class})
 public class IdempotencyAspect {
 
     private final IdempotencyStore idempotencyStore;

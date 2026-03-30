@@ -1,0 +1,33 @@
+package com.drf.coupon.common.config;
+
+import com.drf.common.interceptor.RoleCheckInterceptor;
+import com.drf.common.resolver.AuthInfoResolver;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.List;
+
+@Configuration
+@RequiredArgsConstructor
+public class WebConfig implements WebMvcConfigurer {
+
+    private final AuthInfoResolver authInfoResolver;
+    private final RoleCheckInterceptor roleCheckInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(roleCheckInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/error"
+                );
+    }
+
+    @Override
+    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+        resolvers.add(authInfoResolver);
+    }
+}
