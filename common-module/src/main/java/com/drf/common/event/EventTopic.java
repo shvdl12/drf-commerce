@@ -6,7 +6,8 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum EventTopic {
-    MEMBER("member");
+    MEMBER("member"),
+    ORDER("order");
 
     private final String name;
 }

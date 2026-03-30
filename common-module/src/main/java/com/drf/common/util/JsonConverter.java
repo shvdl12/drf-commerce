@@ -33,4 +33,12 @@ public class JsonConverter {
             throw new RuntimeException("Failed to parse JSON string", e);
         }
     }
+
+    public <T> T treeToValue(JsonNode node, Class<T> valueType) {
+        try {
+            return objectMapper.treeToValue(node, valueType);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to convert JSON node to object", e);
+        }
+    }
 }
