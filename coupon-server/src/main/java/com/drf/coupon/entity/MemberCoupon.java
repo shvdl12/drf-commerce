@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(name = "member_coupon")
+@Table(name = "member_coupon", uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "coupon_id"}))
 public class MemberCoupon extends BaseTimeEntity {
 
     @Id
@@ -32,4 +32,12 @@ public class MemberCoupon extends BaseTimeEntity {
     private LocalDateTime usedAt;
 
     private LocalDateTime reservedAt;
+
+    public static MemberCoupon issue(Coupon coupon, Long memberId) {
+        return MemberCoupon.builder()
+                .coupon(coupon)
+                .memberId(memberId)
+                .status(MemberCouponStatus.UNUSED)
+                .build();
+    }
 }

@@ -1,8 +1,11 @@
 package com.drf.coupon.controller;
 
+import com.drf.common.exception.BusinessException;
+import com.drf.coupon.common.exception.ErrorCode;
 import com.drf.coupon.entity.ApplyType;
 import com.drf.coupon.entity.DiscountType;
 import com.drf.coupon.entity.MemberCouponStatus;
+import com.drf.coupon.model.response.CouponIssueResponse;
 import com.drf.coupon.model.response.MemberCouponListResponse;
 import com.drf.coupon.service.CouponService;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +19,9 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -25,6 +30,62 @@ class CouponControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private CouponService couponService;
+
+    @Nested
+    @DisplayName("쿠폰 발급")
+    class IssueCoupon {
+
+        @Test
+        @DisplayName("발급 성공")
+        void issueCoupon_success() throws Exception {
+            given(couponService.issueCoupon(anyLong(), anyLong())).willReturn(new CouponIssueResponse(10L));
+
+            mockMvc.perform(post("/members/me/coupons/1")
+                            .header("X-User-Id", 1)
+                            .header("X-User-Role", "USER"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.memberCouponId").value(10L));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 쿠폰이면 404 반환")
+        void issueCoupon_couponNotFound() throws Exception {
+            willThrow(new BusinessException(ErrorCode.COUPON_NOT_FOUND))
+                    .given(couponService).issueCoupon(anyLong(), anyLong());
+
+            mockMvc.perform(post("/members/me/coupons/999")
+                            .header("X-User-Id", 1)
+                            .header("X-User-Role", "USER"))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.message").value(ErrorCode.COUPON_NOT_FOUND.getMessage()));
+        }
+
+        @Test
+        @DisplayName("이미 발급받은 쿠폰이면 409 반환")
+        void issueCoupon_alreadyIssued() throws Exception {
+            willThrow(new BusinessException(ErrorCode.COUPON_ALREADY_ISSUED))
+                    .given(couponService).issueCoupon(anyLong(), anyLong());
+
+            mockMvc.perform(post("/members/me/coupons/1")
+                            .header("X-User-Id", 1)
+                            .header("X-User-Role", "USER"))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.message").value(ErrorCode.COUPON_ALREADY_ISSUED.getMessage()));
+        }
+
+        @Test
+        @DisplayName("수량 소진 시 409 반환")
+        void issueCoupon_exhausted() throws Exception {
+            willThrow(new BusinessException(ErrorCode.COUPON_EXHAUSTED))
+                    .given(couponService).issueCoupon(anyLong(), anyLong());
+
+            mockMvc.perform(post("/members/me/coupons/1")
+                            .header("X-User-Id", 1)
+                            .header("X-User-Role", "USER"))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.message").value(ErrorCode.COUPON_EXHAUSTED.getMessage()));
+        }
+    }
 
     @Nested
     @DisplayName("보유 쿠폰 목록 조회")
