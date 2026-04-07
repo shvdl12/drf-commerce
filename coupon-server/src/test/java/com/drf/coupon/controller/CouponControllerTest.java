@@ -8,6 +8,7 @@ import com.drf.coupon.entity.MemberCouponStatus;
 import com.drf.coupon.model.response.CouponCalculateResponse;
 import com.drf.coupon.model.response.CouponIssueResponse;
 import com.drf.coupon.model.response.MemberCouponListResponse;
+import com.drf.coupon.service.CouponFacade;
 import com.drf.coupon.service.CouponService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -32,6 +33,9 @@ class CouponControllerTest extends BaseControllerTest {
     @MockitoBean
     private CouponService couponService;
 
+    @MockitoBean
+    private CouponFacade couponFacade;
+
     @Nested
     @DisplayName("쿠폰 발급")
     class IssueCoupon {
@@ -39,7 +43,7 @@ class CouponControllerTest extends BaseControllerTest {
         @Test
         @DisplayName("발급 성공")
         void issueCoupon_success() throws Exception {
-            given(couponService.issueCoupon(anyLong(), anyLong())).willReturn(new CouponIssueResponse(10L));
+            given(couponFacade.issueCoupon(anyLong(), anyLong())).willReturn(new CouponIssueResponse(10L));
 
             mockMvc.perform(post("/members/me/coupons/1")
                             .header("X-User-Id", 1)
@@ -52,7 +56,7 @@ class CouponControllerTest extends BaseControllerTest {
         @DisplayName("존재하지 않는 쿠폰이면 404 반환")
         void issueCoupon_couponNotFound() throws Exception {
             willThrow(new BusinessException(ErrorCode.COUPON_NOT_FOUND))
-                    .given(couponService).issueCoupon(anyLong(), anyLong());
+                    .given(couponFacade).issueCoupon(anyLong(), anyLong());
 
             mockMvc.perform(post("/members/me/coupons/999")
                             .header("X-User-Id", 1)
@@ -65,7 +69,7 @@ class CouponControllerTest extends BaseControllerTest {
         @DisplayName("이미 발급받은 쿠폰이면 409 반환")
         void issueCoupon_alreadyIssued() throws Exception {
             willThrow(new BusinessException(ErrorCode.COUPON_ALREADY_ISSUED))
-                    .given(couponService).issueCoupon(anyLong(), anyLong());
+                    .given(couponFacade).issueCoupon(anyLong(), anyLong());
 
             mockMvc.perform(post("/members/me/coupons/1")
                             .header("X-User-Id", 1)
@@ -78,7 +82,7 @@ class CouponControllerTest extends BaseControllerTest {
         @DisplayName("수량 소진 시 409 반환")
         void issueCoupon_exhausted() throws Exception {
             willThrow(new BusinessException(ErrorCode.COUPON_EXHAUSTED))
-                    .given(couponService).issueCoupon(anyLong(), anyLong());
+                    .given(couponFacade).issueCoupon(anyLong(), anyLong());
 
             mockMvc.perform(post("/members/me/coupons/1")
                             .header("X-User-Id", 1)
@@ -133,7 +137,7 @@ class CouponControllerTest extends BaseControllerTest {
         @Test
         @DisplayName("계산 성공")
         void calculateCoupon_success() throws Exception {
-            given(couponService.calculateCoupon(anyLong(), anyLong(), anyInt(), any()))
+            given(couponFacade.calculateCoupon(anyLong(), anyLong(), anyInt(), any()))
                     .willReturn(new CouponCalculateResponse(15000, 3000, 12000));
 
             mockMvc.perform(get("/members/me/coupons/1/calculate")
@@ -150,7 +154,7 @@ class CouponControllerTest extends BaseControllerTest {
         @DisplayName("보유하지 않은 쿠폰이면 404 반환")
         void calculateCoupon_memberCouponNotFound() throws Exception {
             willThrow(new BusinessException(ErrorCode.MEMBER_COUPON_NOT_FOUND))
-                    .given(couponService).calculateCoupon(anyLong(), anyLong(), anyInt(), any());
+                    .given(couponFacade).calculateCoupon(anyLong(), anyLong(), anyInt(), any());
 
             mockMvc.perform(get("/members/me/coupons/999/calculate")
                             .header("X-User-Id", 1)
@@ -164,7 +168,7 @@ class CouponControllerTest extends BaseControllerTest {
         @DisplayName("최소 주문 금액 미충족 시 400 반환")
         void calculateCoupon_minOrderAmountNotMet() throws Exception {
             willThrow(new BusinessException(ErrorCode.COUPON_MIN_ORDER_AMOUNT_NOT_MET))
-                    .given(couponService).calculateCoupon(anyLong(), anyLong(), anyInt(), any());
+                    .given(couponFacade).calculateCoupon(anyLong(), anyLong(), anyInt(), any());
 
             mockMvc.perform(get("/members/me/coupons/1/calculate")
                             .header("X-User-Id", 1)
@@ -178,7 +182,7 @@ class CouponControllerTest extends BaseControllerTest {
         @DisplayName("카테고리 쿠폰인데 categoryAmount가 없으면 400 반환")
         void calculateCoupon_categoryAmountRequired() throws Exception {
             willThrow(new BusinessException(ErrorCode.CATEGORY_AMOUNT_REQUIRED))
-                    .given(couponService).calculateCoupon(anyLong(), anyLong(), anyInt(), any());
+                    .given(couponFacade).calculateCoupon(anyLong(), anyLong(), anyInt(), any());
 
             mockMvc.perform(get("/members/me/coupons/1/calculate")
                             .header("X-User-Id", 1)

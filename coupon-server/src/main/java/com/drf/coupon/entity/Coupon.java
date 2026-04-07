@@ -1,6 +1,8 @@
 package com.drf.coupon.entity;
 
 import com.drf.common.entity.BaseTimeEntity;
+import com.drf.common.exception.BusinessException;
+import com.drf.coupon.common.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -98,4 +100,10 @@ public class Coupon extends BaseTimeEntity {
                 .build();
     }
 
+    public void validateCouponAvailability() {
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(validFrom) || now.isAfter(validUntil)) {
+            throw new BusinessException(ErrorCode.COUPON_NOT_AVAILABLE);
+        }
+    }
 }

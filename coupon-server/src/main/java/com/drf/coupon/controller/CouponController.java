@@ -5,6 +5,7 @@ import com.drf.common.model.CommonResponse;
 import com.drf.coupon.model.response.CouponCalculateResponse;
 import com.drf.coupon.model.response.CouponIssueResponse;
 import com.drf.coupon.model.response.MemberCouponListResponse;
+import com.drf.coupon.service.CouponFacade;
 import com.drf.coupon.service.CouponService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,11 +18,12 @@ import java.util.List;
 public class CouponController {
 
     private final CouponService couponService;
+    private final CouponFacade couponFacade;
 
     @PostMapping("/members/me/coupons/{couponId}")
     public ResponseEntity<CommonResponse<CouponIssueResponse>> issueCoupon(
             AuthInfo authInfo, @PathVariable Long couponId) {
-        CouponIssueResponse response = couponService.issueCoupon(authInfo.id(), couponId);
+        CouponIssueResponse response = couponFacade.issueCoupon(authInfo.id(), couponId);
         return ResponseEntity.ok(CommonResponse.success(response));
     }
 
@@ -37,7 +39,7 @@ public class CouponController {
             @PathVariable Long memberCouponId,
             @RequestParam int orderAmount,
             @RequestParam(required = false) Integer categoryAmount) {
-        CouponCalculateResponse response = couponService.calculateCoupon(authInfo.id(), memberCouponId, orderAmount, categoryAmount);
+        CouponCalculateResponse response = couponFacade.calculateCoupon(authInfo.id(), memberCouponId, orderAmount, categoryAmount);
         return ResponseEntity.ok(CommonResponse.success(response));
     }
 }
