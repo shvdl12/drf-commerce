@@ -22,6 +22,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -81,6 +82,20 @@ public class CouponService {
         int discountAmount = discountPolicyRegistry.get(coupon.getDiscountType()).calculate(coupon, base);
 
         return new CouponCalculateResponse(orderAmount, discountAmount, Math.max(0, orderAmount - discountAmount));
+    }
+
+    @Transactional
+    public void reserveCoupon(Long memberCouponId, Long memberId) {
+        if (memberCouponRepository.reserve(memberCouponId, memberId, LocalDateTime.now()) == 0) {
+            throw new BusinessException(ErrorCode.COUPON_RESERVE_FAILED);
+        }
+    }
+
+    @Transactional
+    public void releaseCoupon(Long memberCouponId, Long memberId) {
+        if (memberCouponRepository.release(memberCouponId, memberId) == 0) {
+            throw new BusinessException(ErrorCode.COUPON_RELEASE_FAILED);
+        }
     }
 
     private void validate(ValidationType type, CouponValidationContext context) {

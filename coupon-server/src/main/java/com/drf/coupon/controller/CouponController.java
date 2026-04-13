@@ -42,4 +42,18 @@ public class CouponController {
         CouponCalculateResponse response = couponFacade.calculateCoupon(authInfo.id(), memberCouponId, orderAmount, categoryAmount);
         return ResponseEntity.ok(CommonResponse.success(response));
     }
+
+    @PatchMapping("/members/me/coupons/{memberCouponId}/reserve")
+    public ResponseEntity<CommonResponse<Void>> reserveCoupon(
+            AuthInfo authInfo, @PathVariable Long memberCouponId) {
+        couponService.reserveCoupon(memberCouponId, authInfo.id());
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/members/me/coupons/{memberCouponId}/release")
+    public ResponseEntity<CommonResponse<Void>> releaseCoupon(
+            AuthInfo authInfo, @PathVariable Long memberCouponId) {
+        couponService.releaseCoupon(memberCouponId, authInfo.id());
+        return ResponseEntity.ok().build();
+    }
 }

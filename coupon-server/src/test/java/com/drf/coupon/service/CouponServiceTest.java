@@ -23,9 +23,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
@@ -249,6 +249,50 @@ class CouponServiceTest {
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.MEMBER_COUPON_NOT_FOUND);
+        }
+    }
+
+    @Nested
+    @DisplayName("쿠폰 선점")
+    class Reserve {
+
+        @Test
+        @DisplayName("선점 성공")
+        void reserve_success() {
+            given(memberCouponRepository.reserve(eq(1L), eq(1L), any())).willReturn(1);
+            assertThatCode(() -> couponService.reserveCoupon(1L, 1L)).doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("UNUSED 상태가 아니면 예외 발생")
+        void reserve_failed() {
+            given(memberCouponRepository.reserve(eq(1L), eq(1L), any())).willReturn(0);
+            assertThatThrownBy(() -> couponService.reserveCoupon(1L, 1L))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.COUPON_RESERVE_FAILED);
+        }
+    }
+
+    @Nested
+    @DisplayName("쿠폰 선점 해제")
+    class Release {
+
+        @Test
+        @DisplayName("선점 해제 성공")
+        void release_success() {
+            given(memberCouponRepository.release(1L, 1L)).willReturn(1);
+            assertThatCode(() -> couponService.releaseCoupon(1L, 1L)).doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("RESERVED 상태가 아니면 예외 발생")
+        void release_failed() {
+            given(memberCouponRepository.release(1L, 1L)).willReturn(0);
+            assertThatThrownBy(() -> couponService.releaseCoupon(1L, 1L))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.COUPON_RELEASE_FAILED);
         }
     }
 
