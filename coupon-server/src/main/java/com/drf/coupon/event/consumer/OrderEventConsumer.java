@@ -3,6 +3,7 @@ package com.drf.coupon.event.consumer;
 import com.drf.common.event.EventEnvelope;
 import com.drf.common.util.JsonConverter;
 import com.drf.coupon.event.payload.PaymentCompletedPayload;
+import com.drf.coupon.event.payload.RefundCompletedPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -39,6 +40,10 @@ public class OrderEventConsumer {
                 case "PAYMENT_COMPLETED" -> {
                     PaymentCompletedPayload p = jsonConverter.treeToValue(envelope.payload(), PaymentCompletedPayload.class);
                     orderEventProcessor.processPaymentCompleted(eventId, p.memberCouponId());
+                }
+                case "REFUND_COMPLETED" -> {
+                    RefundCompletedPayload p = jsonConverter.treeToValue(envelope.payload(), RefundCompletedPayload.class);
+                    orderEventProcessor.processRefundCompleted(eventId, p.memberCouponId());
                 }
                 default -> log.warn("Unknown order event type: {}", envelope.eventType());
             }

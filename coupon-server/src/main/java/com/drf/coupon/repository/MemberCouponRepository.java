@@ -36,4 +36,9 @@ public interface MemberCouponRepository extends JpaRepository<MemberCoupon, Long
     @Query("UPDATE MemberCoupon mc SET mc.status = 'USED', mc.usedAt = :now " +
             "WHERE mc.id = :id AND mc.status = 'RESERVED'")
     int use(@Param("id") Long id, @Param("now") LocalDateTime now);
+
+    @Modifying
+    @Query("UPDATE MemberCoupon mc SET mc.status = 'UNUSED', mc.usedAt = null " +
+            "WHERE mc.id = :id AND mc.status = 'USED'")
+    int restore(@Param("id") Long id);
 }
