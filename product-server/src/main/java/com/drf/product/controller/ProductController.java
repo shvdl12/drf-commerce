@@ -31,6 +31,11 @@ public class ProductController {
         return ResponseEntity.ok(CommonResponse.success(productService.getProduct(id)));
     }
 
+    @GetMapping("/internal/products/{id}")
+    public ResponseEntity<CommonResponse<ProductDetailResponse>> getProductInternal(@PathVariable long id) {
+        return ResponseEntity.ok(CommonResponse.success(productService.getProduct(id)));
+    }
+
     @GetMapping("/products")
     public ResponseEntity<CommonResponse<PageResponse<ProductListResponse>>> searchProductsByName(
             @RequestParam String name,
