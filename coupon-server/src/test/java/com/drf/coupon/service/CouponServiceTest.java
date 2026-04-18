@@ -45,7 +45,7 @@ class CouponServiceTest {
 
     @Spy
     private ApplyScopeRegistry applyScopeRegistry = new ApplyScopeRegistry(
-            List.of(new OrderApplyScope(), new CategoryApplyScope())
+            List.of(new AllApplyScope(), new CategoryApplyScope())
     );
 
     @BeforeEach

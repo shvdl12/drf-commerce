@@ -13,19 +13,19 @@ public record MemberCouponListResponse(
         String couponName,
         DiscountType discountType,
         int discountValue,
-        int maxDiscountAmount,
+        Integer maxDiscountAmount,
         int minOrderAmount,
         Integer minOrderQuantity,
         ApplyType applyType,
-        ApplyScope applyScope,         
+        ApplyScope applyScope,
         Long applyTargetId,
         boolean isUnlimited,
-        int maxIssuablePerMember,      
+        int maxIssuablePerMember,
         LocalDateTime validFrom,
         LocalDateTime validUntil,
         MemberCouponStatus status,
         LocalDateTime usedAt,
-        LocalDateTime reservedAt       
+        LocalDateTime reservedAt
 ) {
     public static MemberCouponListResponse from(MemberCoupon memberCoupon) {
         Coupon coupon = memberCoupon.getCoupon();

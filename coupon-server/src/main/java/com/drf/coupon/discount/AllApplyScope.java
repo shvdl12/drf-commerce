@@ -7,17 +7,15 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-public class CategoryApplyScope implements ApplyScopeStrategy {
+public class AllApplyScope implements ApplyScopeStrategy {
 
     @Override
     public ApplyScope getApplyScope() {
-        return ApplyScope.CATEGORY;
+        return ApplyScope.ALL;
     }
 
     @Override
     public List<InternalCartCouponItemRequest> filterApplicableItems(List<InternalCartCouponItemRequest> items, Long applyTargetId) {
-        return items.stream()
-                .filter(i -> i.categoryPath().contains(applyTargetId))
-                .toList();
+        return items;
     }
 }

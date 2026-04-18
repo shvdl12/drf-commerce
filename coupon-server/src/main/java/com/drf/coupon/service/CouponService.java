@@ -3,9 +3,11 @@ package com.drf.coupon.service;
 import com.drf.common.exception.BusinessException;
 import com.drf.coupon.common.exception.ErrorCode;
 import com.drf.coupon.discount.ApplyScopeRegistry;
-import com.drf.coupon.discount.DiscountContext;
 import com.drf.coupon.discount.DiscountPolicyRegistry;
-import com.drf.coupon.entity.*;
+import com.drf.coupon.entity.Coupon;
+import com.drf.coupon.entity.CouponStatus;
+import com.drf.coupon.entity.MemberCoupon;
+import com.drf.coupon.entity.MemberCouponStatus;
 import com.drf.coupon.model.response.CouponCalculateResponse;
 import com.drf.coupon.model.response.CouponIssueResponse;
 import com.drf.coupon.model.response.MemberCouponListResponse;
@@ -65,16 +67,17 @@ public class CouponService {
     }
 
     public CouponCalculateResponse calculate(MemberCoupon memberCoupon, int orderAmount, Integer categoryAmount) {
-        Coupon coupon = memberCoupon.getCoupon();
-
-        validate(ValidationType.CALCULATE, CouponValidationContext.forCalculate(coupon, orderAmount, categoryAmount));
-
-        DiscountContext discountContext = new DiscountContext(orderAmount, categoryAmount);
-        ApplyScope applyScope = coupon.getApplyScope() != null ? coupon.getApplyScope() : ApplyScope.ALL;
-        int base = applyScopeRegistry.get(applyScope).getBase(discountContext);
-        int discountAmount = discountPolicyRegistry.get(coupon.getDiscountType()).calculate(coupon, base);
-
-        return new CouponCalculateResponse(orderAmount, discountAmount, Math.max(0, orderAmount - discountAmount));
+        return null;
+//        Coupon coupon = memberCoupon.getCoupon();
+//
+//        validate(ValidationType.CALCULATE, CouponValidationContext.forCalculate(coupon, orderAmount, categoryAmount));
+//
+//        DiscountContext discountContext = new DiscountContext(orderAmount, categoryAmount);
+//        ApplyScope applyScope = coupon.getApplyScope() != null ? coupon.getApplyScope() : ApplyScope.ALL;
+//        int base = applyScopeRegistry.get(applyScope).getBase(discountContext);
+//        int discountAmount = discountPolicyRegistry.get(coupon.getDiscountType()).calculate(coupon, base);
+//
+//        return new CouponCalculateResponse(orderAmount, discountAmount, Math.max(0, orderAmount - discountAmount));
     }
 
     @Transactional

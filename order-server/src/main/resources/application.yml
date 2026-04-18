@@ -32,3 +32,5 @@ server:
 clients:
   product-server:
     url: http://localhost:8082
+  coupon-server:
+    url: http://localhost:8083
