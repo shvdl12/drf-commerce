@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(
         name = "cart",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "product_id"})
+        uniqueConstraints = @UniqueConstraint(columnNames = {"member_id"})
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,27 +22,13 @@ public class Cart extends BaseTimeEntity {
     @Column(nullable = false)
     private Long memberId;
 
-    @Column(nullable = false)
-    private Long productId;
+    private Long couponId;
 
-    @Column(nullable = false)
-    private int quantity;
-
-    private Cart(Long memberId, Long productId, int quantity) {
+    private Cart(Long memberId) {
         this.memberId = memberId;
-        this.productId = productId;
-        this.quantity = quantity;
     }
 
-    public static Cart of(Long memberId, Long productId, int quantity) {
-        return new Cart(memberId, productId, quantity);
-    }
-
-    public void addQuantity(int quantity) {
-        this.quantity += quantity;
-    }
-
-    public void updateQuantity(int quantity) {
-        this.quantity = quantity;
+    public static Cart of(Long memberId) {
+        return new Cart(memberId);
     }
 }

@@ -1,10 +1,10 @@
 package com.drf.order.model.response;
 
 import com.drf.order.client.dto.ProductResponse;
-import com.drf.order.entity.Cart;
+import com.drf.order.entity.CartItem;
 
 public record CartItemResponse(
-        long cartId,
+        long cartItemId,
         long productId,
         String productName,
         int price,
@@ -14,12 +14,12 @@ public record CartItemResponse(
         boolean outOfStock,
         boolean insufficientStock
 ) {
-    public static CartItemResponse of(Cart cart, ProductResponse product) {
+    public static CartItemResponse of(CartItem item, ProductResponse product) {
         int stock = product.stock();
-        int qty = cart.getQuantity();
+        int qty = item.getQuantity();
         return new CartItemResponse(
-                cart.getId(),
-                cart.getProductId(),
+                item.getId(),
+                item.getProductId(),
                 product.name(),
                 product.price(),
                 qty,
