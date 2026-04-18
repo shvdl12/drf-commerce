@@ -1,6 +1,6 @@
 package com.drf.order.model.response;
 
-import com.drf.order.client.dto.ProductResponse;
+import com.drf.order.client.dto.response.ProductResponse;
 import com.drf.order.entity.CartItem;
 
 public record CartItemResponse(

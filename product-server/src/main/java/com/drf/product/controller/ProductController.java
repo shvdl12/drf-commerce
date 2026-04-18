@@ -4,19 +4,20 @@ import com.drf.common.exception.BusinessException;
 import com.drf.common.exception.errorcode.CommonErrorCode;
 import com.drf.common.model.CommonResponse;
 import com.drf.common.model.PageResponse;
+import com.drf.product.model.request.ProductBatchRequest;
+import com.drf.product.model.response.InternalProductResponse;
 import com.drf.product.model.response.ProductDetailResponse;
 import com.drf.product.model.response.ProductListResponse;
 import com.drf.product.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -34,6 +35,12 @@ public class ProductController {
     @GetMapping("/internal/products/{id}")
     public ResponseEntity<CommonResponse<ProductDetailResponse>> getProductInternal(@PathVariable long id) {
         return ResponseEntity.ok(CommonResponse.success(productService.getProduct(id)));
+    }
+
+    @PostMapping("/internal/products/batch")
+    public ResponseEntity<CommonResponse<List<InternalProductResponse>>> getProductsBatch(
+            @Valid @RequestBody ProductBatchRequest request) {
+        return ResponseEntity.ok(CommonResponse.success(productService.getProductsByIds(request)));
     }
 
     @GetMapping("/products")
