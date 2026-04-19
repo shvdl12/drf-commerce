@@ -27,6 +27,7 @@ class DiscountPolicyTest {
                 .maxDiscountAmount(maxDiscountAmount)
                 .applyType(applyType)
                 .applyTargetId(applyTargetId)
+                .maxIssuablePerMember(1)
                 .validFrom(LocalDateTime.now().minusDays(1))
                 .validUntil(LocalDateTime.now().plusDays(30))
                 .status(CouponStatus.ACTIVE)
@@ -42,7 +43,7 @@ class DiscountPolicyTest {
         @Test
         @DisplayName("base 금액에 관계없이 고정 금액 반환")
         void calculate_returnsFixedValue() {
-            Coupon coupon = coupon(DiscountType.FIXED, 3000, ApplyType.ALL, null, null);
+            Coupon coupon = coupon(DiscountType.FIXED, 3000, ApplyType.ORDER, null, null);
 
             assertThat(policy.calculate(coupon, 15000)).isEqualTo(3000);
             assertThat(policy.calculate(coupon, 50000)).isEqualTo(3000);
@@ -58,7 +59,7 @@ class DiscountPolicyTest {
         @Test
         @DisplayName("base 금액에 비율 적용")
         void calculate_rate() {
-            Coupon coupon = coupon(DiscountType.RATE, 10, ApplyType.ALL, null, null);
+            Coupon coupon = coupon(DiscountType.RATE, 10, ApplyType.ORDER, null, null);
 
             assertThat(policy.calculate(coupon, 20000)).isEqualTo(2000);
         }
@@ -66,7 +67,7 @@ class DiscountPolicyTest {
         @Test
         @DisplayName("최대 할인 금액 상한 적용")
         void calculate_capByMax() {
-            Coupon coupon = coupon(DiscountType.RATE, 10, ApplyType.ALL, null, 5000);
+            Coupon coupon = coupon(DiscountType.RATE, 10, ApplyType.ORDER, null, 5000);
 
             assertThat(policy.calculate(coupon, 100000)).isEqualTo(5000);
         }
@@ -74,7 +75,7 @@ class DiscountPolicyTest {
         @Test
         @DisplayName("최대 할인 금액 없으면 계산값 그대로")
         void calculate_noMax() {
-            Coupon coupon = coupon(DiscountType.RATE, 10, ApplyType.ALL, null, null);
+            Coupon coupon = coupon(DiscountType.RATE, 10, ApplyType.ORDER, null, null);
 
             assertThat(policy.calculate(coupon, 100000)).isEqualTo(10000);
         }
@@ -84,11 +85,11 @@ class DiscountPolicyTest {
     @DisplayName("적용 범위 정책")
     class ApplyScopeTest {
 
-        private final AllApplyScope allScope = new AllApplyScope();
+        private final OrderApplyScope allScope = new OrderApplyScope();
         private final CategoryApplyScope categoryScope = new CategoryApplyScope();
 
         @Test
-        @DisplayName("ALL - 전체 주문 금액 반환")
+        @DisplayName("ORDER - 전체 주문 금액 반환")
         void all_returnsOrderAmount() {
             assertThat(allScope.getBase(new DiscountContext(30000, 12000))).isEqualTo(30000);
         }

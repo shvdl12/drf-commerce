@@ -39,13 +39,26 @@ public class Coupon extends BaseTimeEntity {
     @Column(nullable = false)
     private int minOrderAmount;
 
+    @Column(nullable = false)
+    private int minOrderQuantity;
+
     private Integer maxDiscountAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ApplyType applyType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private ApplyScope applyScope;
+
     private Long applyTargetId;
+
+    @Column(nullable = false)
+    private boolean isUnlimited;
+
+    @Column(nullable = false)
+    private int maxIssuablePerMember;
 
     @Column(nullable = false)
     private LocalDateTime validFrom;
@@ -59,30 +72,10 @@ public class Coupon extends BaseTimeEntity {
 
     private LocalDateTime deletedAt;
 
-    public void update(String name, DiscountType discountType, int discountValue,
-                       int totalQuantity, int minOrderAmount, Integer maxDiscountAmount,
-                       ApplyType applyType, Long applyTargetId,
-                       LocalDateTime validFrom, LocalDateTime validUntil) {
-        this.name = name;
-        this.discountType = discountType;
-        this.discountValue = discountValue;
-        this.totalQuantity = totalQuantity;
-        this.minOrderAmount = minOrderAmount;
-        this.maxDiscountAmount = maxDiscountAmount;
-        this.applyType = applyType;
-        this.applyTargetId = applyTargetId;
-        this.validFrom = validFrom;
-        this.validUntil = validUntil;
-    }
-
-    public void delete() {
-        this.status = CouponStatus.DELETED;
-        this.deletedAt = LocalDateTime.now();
-    }
-
     public static Coupon create(String name, DiscountType discountType, int discountValue,
-                                int totalQuantity, int minOrderAmount, Integer maxDiscountAmount,
-                                ApplyType applyType, Long applyTargetId,
+                                int totalQuantity, int minOrderAmount, int minOrderQuantity,
+                                Integer maxDiscountAmount, ApplyType applyType, ApplyScope applyScope,
+                                Long applyTargetId, boolean isUnlimited, int maxIssuablePerMember,
                                 LocalDateTime validFrom, LocalDateTime validUntil) {
         return Coupon.builder()
                 .name(name)
@@ -91,13 +84,43 @@ public class Coupon extends BaseTimeEntity {
                 .totalQuantity(totalQuantity)
                 .issuedQuantity(0)
                 .minOrderAmount(minOrderAmount)
+                .minOrderQuantity(minOrderQuantity)
                 .maxDiscountAmount(maxDiscountAmount)
                 .applyType(applyType)
+                .applyScope(applyScope)
                 .applyTargetId(applyTargetId)
+                .isUnlimited(isUnlimited)
+                .maxIssuablePerMember(maxIssuablePerMember)
                 .validFrom(validFrom)
                 .validUntil(validUntil)
                 .status(CouponStatus.ACTIVE)
                 .build();
+    }
+
+    public void delete() {
+        this.status = CouponStatus.DELETED;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void update(String name, DiscountType discountType, int discountValue,
+                       int totalQuantity, int minOrderAmount, int minOrderQuantity,
+                       Integer maxDiscountAmount, ApplyType applyType, ApplyScope applyScope,
+                       Long applyTargetId, boolean isUnlimited, int maxIssuablePerMember,
+                       LocalDateTime validFrom, LocalDateTime validUntil) {
+        this.name = name;
+        this.discountType = discountType;
+        this.discountValue = discountValue;
+        this.totalQuantity = totalQuantity;
+        this.minOrderAmount = minOrderAmount;
+        this.minOrderQuantity = minOrderQuantity;
+        this.maxDiscountAmount = maxDiscountAmount;
+        this.applyType = applyType;
+        this.applyScope = applyScope;
+        this.applyTargetId = applyTargetId;
+        this.isUnlimited = isUnlimited;
+        this.maxIssuablePerMember = maxIssuablePerMember;
+        this.validFrom = validFrom;
+        this.validUntil = validUntil;
     }
 
     public void validateCouponAvailability() {

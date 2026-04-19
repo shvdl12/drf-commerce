@@ -2,7 +2,7 @@ package com.drf.coupon.service;
 
 import com.drf.common.exception.BusinessException;
 import com.drf.coupon.common.exception.ErrorCode;
-import com.drf.coupon.entity.ApplyType;
+import com.drf.coupon.entity.ApplyScope;
 import com.drf.coupon.entity.Coupon;
 import com.drf.coupon.entity.CouponStatus;
 import com.drf.coupon.entity.DiscountType;
@@ -26,7 +26,7 @@ public class CouponAdminService {
     @Transactional
     public Long createCoupon(CouponCreateRequest request) {
         validateCouponFields(request.discountType(), request.maxDiscountAmount(),
-                request.applyType(), request.applyTargetId(), request.validFrom(), request.validUntil());
+                request.applyScope(), request.applyTargetId(), request.validFrom(), request.validUntil());
 
         Coupon coupon = Coupon.create(
                 request.name(),
@@ -34,9 +34,13 @@ public class CouponAdminService {
                 request.discountValue(),
                 request.totalQuantity(),
                 request.minOrderAmount(),
+                request.minOrderQuantity(),
                 request.maxDiscountAmount(),
                 request.applyType(),
+                request.applyScope(),
                 request.applyTargetId(),
+                request.isUnlimited(),
+                request.maxIssuablePerMember(),
                 request.validFrom(),
                 request.validUntil()
         );
@@ -54,7 +58,8 @@ public class CouponAdminService {
     @Transactional
     public void updateCoupon(Long id, CouponUpdateRequest request) {
         validateCouponFields(request.discountType(), request.maxDiscountAmount(),
-                request.applyType(), request.applyTargetId(), request.validFrom(), request.validUntil());
+                request.applyScope(), request.applyTargetId(),
+                request.validFrom(), request.validUntil());
 
         Coupon coupon = couponRepository.findByIdAndStatusNot(id, CouponStatus.DELETED)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COUPON_NOT_FOUND));
@@ -65,9 +70,13 @@ public class CouponAdminService {
                 request.discountValue(),
                 request.totalQuantity(),
                 request.minOrderAmount(),
+                request.minOrderQuantity(),
                 request.maxDiscountAmount(),
                 request.applyType(),
+                request.applyScope(),
                 request.applyTargetId(),
+                request.isUnlimited(),
+                request.maxIssuablePerMember(),
                 request.validFrom(),
                 request.validUntil()
         );
@@ -81,13 +90,13 @@ public class CouponAdminService {
     }
 
     private void validateCouponFields(DiscountType discountType, Integer maxDiscountAmount,
-                                      ApplyType applyType, Long applyTargetId,
+                                      ApplyScope applyScope, Long applyTargetId,
                                       LocalDateTime validFrom, LocalDateTime validUntil) {
         if (!validUntil.isAfter(validFrom)) {
             throw new BusinessException(ErrorCode.INVALID_VALID_DATE_RANGE);
         }
-        if (applyType == ApplyType.CATEGORY && applyTargetId == null) {
-            throw new BusinessException(ErrorCode.CATEGORY_COUPON_REQUIRES_TARGET);
+        if (applyScope != ApplyScope.ALL && applyTargetId == null) {
+            throw new BusinessException(ErrorCode.SCOPE_TARGET_REQUIRED);
         }
         if (discountType == DiscountType.RATE && maxDiscountAmount == null) {
             throw new BusinessException(ErrorCode.RATE_COUPON_REQUIRES_MAX_DISCOUNT);

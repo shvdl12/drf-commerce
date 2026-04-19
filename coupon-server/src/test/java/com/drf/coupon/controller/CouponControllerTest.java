@@ -99,12 +99,25 @@ class CouponControllerTest extends BaseControllerTest {
         @Test
         @DisplayName("조회 성공")
         void getMemberCoupons_success() throws Exception {
-            MemberCouponListResponse response = new MemberCouponListResponse(
-                    1L, "신규 가입 쿠폰", DiscountType.FIXED, 3000, null, 10000,
-                    ApplyType.ALL, null,
-                    LocalDateTime.of(2026, 4, 1, 0, 0), LocalDateTime.of(2026, 4, 30, 23, 59),
-                    MemberCouponStatus.UNUSED
-            );
+            MemberCouponListResponse response = MemberCouponListResponse.builder()
+                    .memberCouponId(1L)
+                    .couponName("신규 가입 쿠폰")
+                    .discountType(DiscountType.FIXED)
+                    .discountValue(3000)
+                    .maxDiscountAmount(null)
+                    .minOrderAmount(10000)
+                    .minOrderQuantity(1) // 적절한 값 넣어주세요
+                    .applyType(ApplyType.ORDER)
+                    .applyScope(null)
+                    .applyTargetId(null)
+                    .isUnlimited(false)
+                    .maxIssuablePerMember(1)
+                    .validFrom(LocalDateTime.of(2026, 4, 1, 0, 0))
+                    .validUntil(LocalDateTime.of(2026, 4, 30, 23, 59))
+                    .status(MemberCouponStatus.UNUSED)
+                    .usedAt(null)
+                    .reservedAt(null)
+                    .build();
 
             given(couponService.getMemberCoupons(anyLong())).willReturn(List.of(response));
 
@@ -179,9 +192,9 @@ class CouponControllerTest extends BaseControllerTest {
         }
 
         @Test
-        @DisplayName("카테고리 쿠폰인데 categoryAmount가 없으면 400 반환")
-        void calculateCoupon_categoryAmountRequired() throws Exception {
-            willThrow(new BusinessException(ErrorCode.CATEGORY_AMOUNT_REQUIRED))
+        @DisplayName("범위 지정 쿠폰인데 categoryAmount가 없으면 400 반환")
+        void calculateCoupon_scopeAmountRequired() throws Exception {
+            willThrow(new BusinessException(ErrorCode.SCOPE_AMOUNT_REQUIRED))
                     .given(couponFacade).calculateCoupon(anyLong(), anyLong(), anyInt(), any());
 
             mockMvc.perform(get("/members/me/coupons/1/calculate")
@@ -189,7 +202,7 @@ class CouponControllerTest extends BaseControllerTest {
                             .header("X-User-Role", "USER")
                             .param("orderAmount", "15000"))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.message").value(ErrorCode.CATEGORY_AMOUNT_REQUIRED.getMessage()));
+                    .andExpect(jsonPath("$.message").value(ErrorCode.SCOPE_AMOUNT_REQUIRED.getMessage()));
         }
     }
 }

@@ -3,12 +3,12 @@ package com.drf.common.exception;
 import com.drf.common.exception.errorcode.CommonErrorCode;
 import com.drf.common.exception.errorcode.ErrorCodeSpec;
 import com.drf.common.model.CommonResponse;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
-import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -30,14 +30,20 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<?> handleBadRequestError(HttpMessageNotReadableException e) {
-        return ResponseEntity.badRequest().build();
-    }
+    public ResponseEntity<?> handleEnumError(HttpMessageNotReadableException e) {
+        if (e.getCause() instanceof InvalidFormatException ife) {
+            if (ife.getTargetType().isEnum()) {
+                String fieldName = ife.getPath().getFirst().getFieldName();
+                String invalidValue = String.valueOf(ife.getValue());
+                String message = String.format("[%s] %s", fieldName, "허용되지 않는 값입니다: " + invalidValue);
 
-    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-    public ResponseEntity<CommonResponse<?>> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException e) {
-        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                .body(CommonResponse.failure(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE));
+                return ResponseEntity.badRequest().body(
+                        CommonResponse.failure(CommonErrorCode.INVALID_PARAMETER.name(), message)
+                );
+            }
+        }
+
+        return ResponseEntity.badRequest().build();
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

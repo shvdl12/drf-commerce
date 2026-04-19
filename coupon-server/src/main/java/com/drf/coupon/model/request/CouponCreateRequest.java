@@ -1,5 +1,6 @@
 package com.drf.coupon.model.request;
 
+import com.drf.coupon.entity.ApplyScope;
 import com.drf.coupon.entity.ApplyType;
 import com.drf.coupon.entity.DiscountType;
 import jakarta.validation.constraints.Min;
@@ -27,13 +28,24 @@ public record CouponCreateRequest(
         @NotNull @Min(0)
         Integer minOrderAmount,
 
+        @NotNull @Min(1)
+        Integer minOrderQuantity,
+
         @Min(1)
         Integer maxDiscountAmount,
 
         @NotNull
         ApplyType applyType,
 
+        @NotNull
+        ApplyScope applyScope,
+
         Long applyTargetId,
+
+        boolean isUnlimited,
+
+        @NotNull @Min(1)
+        Integer maxIssuablePerMember,
 
         @NotNull
         LocalDateTime validFrom,

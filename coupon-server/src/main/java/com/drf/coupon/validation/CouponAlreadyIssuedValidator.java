@@ -19,7 +19,9 @@ public class CouponAlreadyIssuedValidator implements CouponValidationStrategy {
 
     @Override
     public void validate(CouponValidationContext context) {
-        if (memberCouponRepository.existsByMemberIdAndCouponId(context.memberId(), context.coupon().getId())) {
+        long issuedCount = memberCouponRepository.countByMemberIdAndCouponId(
+                context.memberId(), context.coupon().getId());
+        if (issuedCount >= context.coupon().getMaxIssuablePerMember()) {
             throw new BusinessException(ErrorCode.COUPON_ALREADY_ISSUED);
         }
     }

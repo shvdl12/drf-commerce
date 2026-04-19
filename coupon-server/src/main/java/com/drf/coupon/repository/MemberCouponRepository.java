@@ -20,7 +20,7 @@ public interface MemberCouponRepository extends JpaRepository<MemberCoupon, Long
     @EntityGraph(attributePaths = {"coupon"})
     Optional<MemberCoupon> findByIdAndMemberIdAndStatus(Long id, Long memberId, MemberCouponStatus status);
 
-    boolean existsByMemberIdAndCouponId(Long memberId, Long couponId);
+    long countByMemberIdAndCouponId(Long memberId, Long couponId);
 
     @Modifying
     @Query("UPDATE MemberCoupon mc SET mc.status = 'RESERVED', mc.reservedAt = :now " +

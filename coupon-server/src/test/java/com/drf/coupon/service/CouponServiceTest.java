@@ -17,7 +17,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -46,17 +45,33 @@ class CouponServiceTest {
 
     @Spy
     private ApplyScopeRegistry applyScopeRegistry = new ApplyScopeRegistry(
-            List.of(new AllApplyScope(), new CategoryApplyScope())
+            List.of(new OrderApplyScope(), new CategoryApplyScope())
     );
 
     @BeforeEach
     void setUp() {
-        // 검증 로직은 CouponValidatorTest에서 검증 - 서비스 테스트에서는 빈 리스트로 주입
         couponService = new CouponService(
                 couponRepository, memberCouponRepository,
                 discountPolicyRegistry, applyScopeRegistry,
                 List.of()
         );
+    }
+
+    private Coupon orderCoupon() {
+        return Coupon.builder()
+                .id(1L)
+                .name("신규 가입 쿠폰")
+                .discountType(DiscountType.FIXED)
+                .discountValue(3000)
+                .totalQuantity(100)
+                .issuedQuantity(0)
+                .minOrderAmount(10000)
+                .applyType(ApplyType.ORDER)
+                .maxIssuablePerMember(1)
+                .validFrom(LocalDateTime.now().minusDays(1))
+                .validUntil(LocalDateTime.now().plusDays(30))
+                .status(CouponStatus.ACTIVE)
+                .build();
     }
 
     @Nested
@@ -67,20 +82,7 @@ class CouponServiceTest {
         @DisplayName("보유 쿠폰 목록 반환")
         void getMemberCoupons_success() {
             // given
-            Coupon coupon = Coupon.builder()
-                    .id(1L)
-                    .name("신규 가입 쿠폰")
-                    .discountType(DiscountType.FIXED)
-                    .discountValue(3000)
-                    .totalQuantity(100)
-                    .issuedQuantity(1)
-                    .minOrderAmount(10000)
-                    .applyType(ApplyType.ALL)
-                    .validFrom(LocalDateTime.of(2026, 4, 1, 0, 0))
-                    .validUntil(LocalDateTime.of(2026, 4, 30, 23, 59))
-                    .status(CouponStatus.ACTIVE)
-                    .build();
-
+            Coupon coupon = orderCoupon();
             MemberCoupon memberCoupon = MemberCoupon.builder()
                     .id(1L)
                     .coupon(coupon)
@@ -119,11 +121,10 @@ class CouponServiceTest {
     class GetCouponForIssue {
 
         @Test
-        @DisplayName("성공 - 쿠폰 반환 (검증은 validatorRegistry에 위임)")
+        @DisplayName("성공 - 쿠폰 반환")
         void getCouponForIssue_success() {
             // given
-            Coupon coupon = activeCoupon();
-            given(couponRepository.findByIdAndStatus(1L, CouponStatus.ACTIVE)).willReturn(Optional.of(coupon));
+            given(couponRepository.findByIdAndStatus(1L, CouponStatus.ACTIVE)).willReturn(Optional.of(orderCoupon()));
 
             // when
             Coupon result = couponService.getCouponForIssue(1L, 1L);
@@ -143,93 +144,6 @@ class CouponServiceTest {
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.COUPON_NOT_FOUND);
-        }
-
-        private Coupon activeCoupon() {
-            return Coupon.builder()
-                    .id(1L)
-                    .name("신규 가입 쿠폰")
-                    .discountType(DiscountType.FIXED)
-                    .discountValue(3000)
-                    .totalQuantity(100)
-                    .issuedQuantity(0)
-                    .minOrderAmount(10000)
-                    .applyType(ApplyType.ALL)
-                    .validFrom(LocalDateTime.now().minusDays(1))
-                    .validUntil(LocalDateTime.now().plusDays(30))
-                    .status(CouponStatus.ACTIVE)
-                    .build();
-        }
-    }
-
-    @Nested
-    @DisplayName("쿠폰 발급 처리")
-    class Issue {
-
-        private Coupon coupon() {
-            return Coupon.builder()
-                    .id(1L)
-                    .name("신규 가입 쿠폰")
-                    .discountType(DiscountType.FIXED)
-                    .discountValue(3000)
-                    .totalQuantity(100)
-                    .issuedQuantity(0)
-                    .minOrderAmount(10000)
-                    .applyType(ApplyType.ALL)
-                    .validFrom(LocalDateTime.now().minusDays(1))
-                    .validUntil(LocalDateTime.now().plusDays(30))
-                    .status(CouponStatus.ACTIVE)
-                    .build();
-        }
-
-        @Test
-        @DisplayName("발급 성공")
-        void issue_success() {
-            // given
-            Coupon coupon = coupon();
-            MemberCoupon memberCoupon = MemberCoupon.builder()
-                    .id(10L)
-                    .coupon(coupon)
-                    .memberId(1L)
-                    .status(MemberCouponStatus.UNUSED)
-                    .build();
-
-            given(couponRepository.incrementIssuedQuantity(1L)).willReturn(1);
-            given(memberCouponRepository.save(any(MemberCoupon.class))).willReturn(memberCoupon);
-
-            // when
-            CouponIssueResponse result = couponService.issueCoupon(coupon, 1L);
-
-            // then
-            assertThat(result.memberCouponId()).isEqualTo(10L);
-        }
-
-        @Test
-        @DisplayName("수량 소진 시 예외 발생")
-        void issue_exhausted() {
-            // given
-            given(couponRepository.incrementIssuedQuantity(1L)).willReturn(0);
-
-            // when & then
-            assertThatThrownBy(() -> couponService.issueCoupon(coupon(), 1L))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(ErrorCode.COUPON_EXHAUSTED);
-        }
-
-        @Test
-        @DisplayName("유니크 제약 조건 위반 시 중복 발급 예외 발생")
-        void issue_alreadyIssued_uniqueError() {
-            // given
-            given(couponRepository.incrementIssuedQuantity(1L)).willReturn(1);
-            given(memberCouponRepository.save(any(MemberCoupon.class)))
-                    .willThrow(new DataIntegrityViolationException("쿠폰 중복"));
-
-            // when & then
-            assertThatThrownBy(() -> couponService.issueCoupon(coupon(), 1L))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(ErrorCode.COUPON_ALREADY_ISSUED);
         }
     }
 
@@ -297,6 +211,46 @@ class CouponServiceTest {
     }
 
     @Nested
+    @DisplayName("쿠폰 발급 처리")
+    class Issue {
+
+        @Test
+        @DisplayName("발급 성공")
+        void issue_success() {
+            // given
+            Coupon coupon = orderCoupon();
+            MemberCoupon memberCoupon = MemberCoupon.builder()
+                    .id(10L)
+                    .coupon(coupon)
+                    .memberId(1L)
+                    .status(MemberCouponStatus.UNUSED)
+                    .build();
+
+            given(couponRepository.incrementIssuedQuantity(1L)).willReturn(1);
+            given(memberCouponRepository.save(any(MemberCoupon.class))).willReturn(memberCoupon);
+
+            // when
+            CouponIssueResponse result = couponService.issueCoupon(coupon, 1L);
+
+            // then
+            assertThat(result.memberCouponId()).isEqualTo(10L);
+        }
+
+        @Test
+        @DisplayName("수량 소진 시 예외 발생")
+        void issue_exhausted() {
+            // given
+            given(couponRepository.incrementIssuedQuantity(1L)).willReturn(0);
+
+            // when & then
+            assertThatThrownBy(() -> couponService.issueCoupon(orderCoupon(), 1L))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.COUPON_EXHAUSTED);
+        }
+    }
+
+    @Nested
     @DisplayName("쿠폰 할인가 계산")
     class Calculate {
 
@@ -306,39 +260,6 @@ class CouponServiceTest {
                     .coupon(coupon)
                     .memberId(1L)
                     .status(MemberCouponStatus.UNUSED)
-                    .build();
-        }
-
-        private Coupon fixedCoupon() {
-            return Coupon.builder()
-                    .id(1L)
-                    .name("정액 쿠폰")
-                    .discountType(DiscountType.FIXED)
-                    .discountValue(3000)
-                    .totalQuantity(100)
-                    .issuedQuantity(1)
-                    .minOrderAmount(10000)
-                    .applyType(ApplyType.ALL)
-                    .validFrom(LocalDateTime.now().minusDays(1))
-                    .validUntil(LocalDateTime.now().plusDays(30))
-                    .status(CouponStatus.ACTIVE)
-                    .build();
-        }
-
-        private Coupon rateCoupon(ApplyType applyType) {
-            return Coupon.builder()
-                    .id(2L)
-                    .name("정률 쿠폰")
-                    .discountType(DiscountType.RATE)
-                    .discountValue(10)
-                    .totalQuantity(100)
-                    .issuedQuantity(1)
-                    .minOrderAmount(10000)
-                    .maxDiscountAmount(5000)
-                    .applyType(applyType)
-                    .validFrom(LocalDateTime.now().minusDays(1))
-                    .validUntil(LocalDateTime.now().plusDays(30))
-                    .status(CouponStatus.ACTIVE)
                     .build();
         }
 
@@ -355,10 +276,10 @@ class CouponServiceTest {
         }
 
         @Test
-        @DisplayName("정률 쿠폰 (ALL) - 할인 금액 계산")
-        void calculate_rate_all() {
+        @DisplayName("정률 쿠폰 (ORDER) - 할인 금액 계산")
+        void calculate_rate_order() {
             // when
-            CouponCalculateResponse result = couponService.calculate(memberCoupon(rateCoupon(ApplyType.ALL)), 20000, null);
+            CouponCalculateResponse result = couponService.calculate(memberCoupon(rateCoupon()), 20000, null);
 
             // then
             assertThat(result.discountAmount()).isEqualTo(2000);
@@ -366,10 +287,10 @@ class CouponServiceTest {
         }
 
         @Test
-        @DisplayName("정률 쿠폰 (ALL) - 최대 할인 금액 적용")
-        void calculate_rate_all_maxDiscount() {
+        @DisplayName("정률 쿠폰 (ORDER) - 최대 할인 금액 적용")
+        void calculate_rate_order_maxDiscount() {
             // when
-            CouponCalculateResponse result = couponService.calculate(memberCoupon(rateCoupon(ApplyType.ALL)), 100000, null);
+            CouponCalculateResponse result = couponService.calculate(memberCoupon(rateCoupon()), 100000, null);
 
             // then
             assertThat(result.discountAmount()).isEqualTo(5000);
@@ -389,7 +310,8 @@ class CouponServiceTest {
                     .issuedQuantity(1)
                     .minOrderAmount(10000)
                     .maxDiscountAmount(null)
-                    .applyType(ApplyType.ALL)
+                    .applyType(ApplyType.ORDER)
+                    .maxIssuablePerMember(1)
                     .validFrom(LocalDateTime.now().minusDays(1))
                     .validUntil(LocalDateTime.now().plusDays(30))
                     .status(CouponStatus.ACTIVE)
@@ -404,10 +326,10 @@ class CouponServiceTest {
         }
 
         @Test
-        @DisplayName("정률 쿠폰 (CATEGORY) - 카테고리 금액 기준 계산")
+        @DisplayName("정률 쿠폰 (CATEGORY 스코프) - 카테고리 금액 기준 계산")
         void calculate_rate_category() {
             // when
-            CouponCalculateResponse result = couponService.calculate(memberCoupon(rateCoupon(ApplyType.CATEGORY)), 20000, 12000);
+            CouponCalculateResponse result = couponService.calculate(memberCoupon(rateCouponWithCategoryScope()), 20000, 12000);
 
             // then
             assertThat(result.discountAmount()).isEqualTo(1200);
@@ -426,7 +348,8 @@ class CouponServiceTest {
                     .totalQuantity(100)
                     .issuedQuantity(1)
                     .minOrderAmount(10000)
-                    .applyType(ApplyType.ALL)
+                    .applyType(ApplyType.ORDER)
+                    .maxIssuablePerMember(1)
                     .validFrom(LocalDateTime.now().minusDays(1))
                     .validUntil(LocalDateTime.now().plusDays(30))
                     .status(CouponStatus.ACTIVE)
@@ -438,6 +361,61 @@ class CouponServiceTest {
             // then
             assertThat(result.discountAmount()).isEqualTo(20000);
             assertThat(result.finalAmount()).isEqualTo(0);
+        }
+
+        private Coupon fixedCoupon() {
+            return Coupon.builder()
+                    .id(1L)
+                    .name("정액 쿠폰")
+                    .discountType(DiscountType.FIXED)
+                    .discountValue(3000)
+                    .totalQuantity(100)
+                    .issuedQuantity(1)
+                    .minOrderAmount(10000)
+                    .applyType(ApplyType.ORDER)
+                    .maxIssuablePerMember(1)
+                    .validFrom(LocalDateTime.now().minusDays(1))
+                    .validUntil(LocalDateTime.now().plusDays(30))
+                    .status(CouponStatus.ACTIVE)
+                    .build();
+        }
+
+        private Coupon rateCoupon() {
+            return Coupon.builder()
+                    .id(2L)
+                    .name("정률 쿠폰")
+                    .discountType(DiscountType.RATE)
+                    .discountValue(10)
+                    .totalQuantity(100)
+                    .issuedQuantity(1)
+                    .minOrderAmount(10000)
+                    .maxDiscountAmount(5000)
+                    .applyType(ApplyType.ORDER)
+                    .maxIssuablePerMember(1)
+                    .validFrom(LocalDateTime.now().minusDays(1))
+                    .validUntil(LocalDateTime.now().plusDays(30))
+                    .status(CouponStatus.ACTIVE)
+                    .build();
+        }
+
+        private Coupon rateCouponWithCategoryScope() {
+            return Coupon.builder()
+                    .id(2L)
+                    .name("카테고리 정률 쿠폰")
+                    .discountType(DiscountType.RATE)
+                    .discountValue(10)
+                    .totalQuantity(100)
+                    .issuedQuantity(1)
+                    .minOrderAmount(10000)
+                    .maxDiscountAmount(5000)
+                    .applyType(ApplyType.PRODUCT)
+                    .applyScope(ApplyScope.CATEGORY)
+                    .applyTargetId(1L)
+                    .maxIssuablePerMember(1)
+                    .validFrom(LocalDateTime.now().minusDays(1))
+                    .validUntil(LocalDateTime.now().plusDays(30))
+                    .status(CouponStatus.ACTIVE)
+                    .build();
         }
     }
 }

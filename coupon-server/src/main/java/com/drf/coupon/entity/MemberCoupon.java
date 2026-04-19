@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(name = "member_coupon", uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "coupon_id"}))
+@Table(name = "member_coupon")
 public class MemberCoupon extends BaseTimeEntity {
 
     @Id

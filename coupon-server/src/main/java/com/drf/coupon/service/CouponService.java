@@ -5,10 +5,7 @@ import com.drf.coupon.common.exception.ErrorCode;
 import com.drf.coupon.discount.ApplyScopeRegistry;
 import com.drf.coupon.discount.DiscountContext;
 import com.drf.coupon.discount.DiscountPolicyRegistry;
-import com.drf.coupon.entity.Coupon;
-import com.drf.coupon.entity.CouponStatus;
-import com.drf.coupon.entity.MemberCoupon;
-import com.drf.coupon.entity.MemberCouponStatus;
+import com.drf.coupon.entity.*;
 import com.drf.coupon.model.response.CouponCalculateResponse;
 import com.drf.coupon.model.response.CouponIssueResponse;
 import com.drf.coupon.model.response.MemberCouponListResponse;
@@ -18,7 +15,6 @@ import com.drf.coupon.validation.CouponValidationContext;
 import com.drf.coupon.validation.CouponValidationStrategy;
 import com.drf.coupon.validation.ValidationType;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,12 +54,8 @@ public class CouponService {
             throw new BusinessException(ErrorCode.COUPON_EXHAUSTED);
         }
 
-        try {
-            MemberCoupon memberCoupon = memberCouponRepository.save(MemberCoupon.issue(coupon, memberId));
-            return new CouponIssueResponse(memberCoupon.getId());
-        } catch (DataIntegrityViolationException e) {
-            throw new BusinessException(ErrorCode.COUPON_ALREADY_ISSUED);
-        }
+        MemberCoupon memberCoupon = memberCouponRepository.save(MemberCoupon.issue(coupon, memberId));
+        return new CouponIssueResponse(memberCoupon.getId());
     }
 
     @Transactional(readOnly = true)
@@ -78,7 +70,8 @@ public class CouponService {
         validate(ValidationType.CALCULATE, CouponValidationContext.forCalculate(coupon, orderAmount, categoryAmount));
 
         DiscountContext discountContext = new DiscountContext(orderAmount, categoryAmount);
-        int base = applyScopeRegistry.get(coupon.getApplyType()).getBase(discountContext);
+        ApplyScope applyScope = coupon.getApplyScope() != null ? coupon.getApplyScope() : ApplyScope.ALL;
+        int base = applyScopeRegistry.get(applyScope).getBase(discountContext);
         int discountAmount = discountPolicyRegistry.get(coupon.getDiscountType()).calculate(coupon, base);
 
         return new CouponCalculateResponse(orderAmount, discountAmount, Math.max(0, orderAmount - discountAmount));

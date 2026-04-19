@@ -1,14 +1,14 @@
 package com.drf.coupon.discount;
 
-import com.drf.coupon.entity.ApplyType;
+import com.drf.coupon.entity.ApplyScope;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CategoryApplyScope implements ApplyScope {
+public class CategoryApplyScope implements ApplyScopeStrategy {
 
     @Override
-    public ApplyType getType() {
-        return ApplyType.CATEGORY;
+    public ApplyScope getApplyScope() {
+        return ApplyScope.CATEGORY;
     }
 
     @Override

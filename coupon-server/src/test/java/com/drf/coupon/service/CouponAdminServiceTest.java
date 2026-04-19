@@ -2,10 +2,7 @@ package com.drf.coupon.service;
 
 import com.drf.common.exception.BusinessException;
 import com.drf.coupon.common.exception.ErrorCode;
-import com.drf.coupon.entity.ApplyType;
-import com.drf.coupon.entity.Coupon;
-import com.drf.coupon.entity.CouponStatus;
-import com.drf.coupon.entity.DiscountType;
+import com.drf.coupon.entity.*;
 import com.drf.coupon.model.request.CouponCreateRequest;
 import com.drf.coupon.model.request.CouponUpdateRequest;
 import com.drf.coupon.model.response.CouponListResponse;
@@ -52,9 +49,12 @@ class CouponAdminServiceTest {
                     .discountValue(3000)
                     .totalQuantity(100)
                     .minOrderAmount(10000)
+                    .minOrderQuantity(0)
                     .maxDiscountAmount(null)
-                    .applyType(ApplyType.ALL)
+                    .applyType(ApplyType.ORDER)
+                    .applyScope(ApplyScope.ALL)
                     .applyTargetId(null)
+                    .maxIssuablePerMember(1)
                     .validFrom(LocalDateTime.of(2026, 4, 1, 0, 0))
                     .validUntil(LocalDateTime.of(2026, 4, 30, 23, 59))
                     .build();
@@ -73,6 +73,8 @@ class CouponAdminServiceTest {
                     .issuedQuantity(0)
                     .minOrderAmount(request.minOrderAmount())
                     .applyType(request.applyType())
+                    .applyScope(request.applyScope())
+                    .maxIssuablePerMember(1)
                     .validFrom(request.validFrom())
                     .validUntil(request.validUntil())
                     .build();
@@ -97,7 +99,10 @@ class CouponAdminServiceTest {
                     .discountValue(3000)
                     .totalQuantity(100)
                     .minOrderAmount(10000)
-                    .applyType(ApplyType.ALL)
+                    .minOrderQuantity(0)
+                    .applyType(ApplyType.ORDER)
+                    .applyScope(ApplyScope.ALL)
+                    .maxIssuablePerMember(1)
                     .validFrom(LocalDateTime.of(2026, 4, 30, 0, 0))
                     .validUntil(LocalDateTime.of(2026, 4, 1, 0, 0))
                     .build();
@@ -110,8 +115,8 @@ class CouponAdminServiceTest {
         }
 
         @Test
-        @DisplayName("카테고리 쿠폰에 적용 대상이 없으면 예외 발생")
-        void createCoupon_categoryWithoutTarget() {
+        @DisplayName("스코프 대상이 지정되지 않은 쿠폰에 적용 대상 없으면 예외 발생")
+        void createCoupon_scopeWithoutTarget() {
             // given
             request = CouponCreateRequest.builder()
                     .name("카테고리 쿠폰")
@@ -119,8 +124,11 @@ class CouponAdminServiceTest {
                     .discountValue(3000)
                     .totalQuantity(100)
                     .minOrderAmount(10000)
-                    .applyType(ApplyType.CATEGORY)
+                    .minOrderQuantity(0)
+                    .applyType(ApplyType.PRODUCT)
+                    .applyScope(ApplyScope.CATEGORY)
                     .applyTargetId(null)
+                    .maxIssuablePerMember(1)
                     .validFrom(LocalDateTime.of(2026, 4, 1, 0, 0))
                     .validUntil(LocalDateTime.of(2026, 4, 30, 0, 0))
                     .build();
@@ -129,7 +137,7 @@ class CouponAdminServiceTest {
             assertThatThrownBy(() -> couponAdminService.createCoupon(request))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
-                    .isEqualTo(ErrorCode.CATEGORY_COUPON_REQUIRES_TARGET);
+                    .isEqualTo(ErrorCode.SCOPE_TARGET_REQUIRED);
         }
 
         @Test
@@ -142,8 +150,11 @@ class CouponAdminServiceTest {
                     .discountValue(10)
                     .totalQuantity(100)
                     .minOrderAmount(10000)
+                    .minOrderQuantity(0)
                     .maxDiscountAmount(null)
-                    .applyType(ApplyType.ALL)
+                    .applyType(ApplyType.ORDER)
+                    .applyScope(ApplyScope.ALL)
+                    .maxIssuablePerMember(1)
                     .validFrom(LocalDateTime.of(2026, 4, 1, 0, 0))
                     .validUntil(LocalDateTime.of(2026, 4, 30, 0, 0))
                     .build();
@@ -171,7 +182,10 @@ class CouponAdminServiceTest {
                     .discountValue(5000)
                     .totalQuantity(200)
                     .minOrderAmount(20000)
-                    .applyType(ApplyType.ALL)
+                    .minOrderQuantity(0)
+                    .applyType(ApplyType.ORDER)
+                    .applyScope(ApplyScope.ALL)
+                    .maxIssuablePerMember(1)
                     .validFrom(LocalDateTime.of(2026, 5, 1, 0, 0))
                     .validUntil(LocalDateTime.of(2026, 5, 31, 23, 59))
                     .build();
@@ -184,7 +198,9 @@ class CouponAdminServiceTest {
                     .totalQuantity(100)
                     .issuedQuantity(0)
                     .minOrderAmount(10000)
-                    .applyType(ApplyType.ALL)
+                    .applyType(ApplyType.ORDER)
+                    .applyScope(ApplyScope.ALL)
+                    .maxIssuablePerMember(1)
                     .validFrom(LocalDateTime.of(2026, 4, 1, 0, 0))
                     .validUntil(LocalDateTime.of(2026, 4, 30, 23, 59))
                     .status(com.drf.coupon.entity.CouponStatus.ACTIVE)
@@ -229,7 +245,10 @@ class CouponAdminServiceTest {
                     .discountValue(5000)
                     .totalQuantity(200)
                     .minOrderAmount(20000)
-                    .applyType(ApplyType.ALL)
+                    .minOrderQuantity(0)
+                    .applyType(ApplyType.ORDER)
+                    .applyScope(ApplyScope.ALL)
+                    .maxIssuablePerMember(1)
                     .validFrom(LocalDateTime.of(2026, 5, 31, 0, 0))
                     .validUntil(LocalDateTime.of(2026, 5, 1, 0, 0))
                     .build();
@@ -258,7 +277,9 @@ class CouponAdminServiceTest {
                     .totalQuantity(100)
                     .issuedQuantity(1)
                     .minOrderAmount(10000)
-                    .applyType(ApplyType.ALL)
+                    .applyType(ApplyType.ORDER)
+                    .applyScope(ApplyScope.ALL)
+                    .maxIssuablePerMember(1)
                     .validFrom(LocalDateTime.of(2026, 4, 1, 0, 0))
                     .validUntil(LocalDateTime.of(2026, 4, 30, 23, 59))
                     .status(CouponStatus.ACTIVE)
@@ -306,7 +327,9 @@ class CouponAdminServiceTest {
                     .totalQuantity(100)
                     .issuedQuantity(0)
                     .minOrderAmount(10000)
-                    .applyType(ApplyType.ALL)
+                    .applyType(ApplyType.ORDER)
+                    .applyScope(ApplyScope.ALL)
+                    .maxIssuablePerMember(1)
                     .validFrom(LocalDateTime.of(2026, 4, 1, 0, 0))
                     .validUntil(LocalDateTime.of(2026, 4, 30, 23, 59))
                     .status(CouponStatus.ACTIVE)
