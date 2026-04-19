@@ -5,7 +5,6 @@ import com.drf.coupon.common.exception.ErrorCode;
 import com.drf.coupon.entity.ApplyType;
 import com.drf.coupon.entity.DiscountType;
 import com.drf.coupon.entity.MemberCouponStatus;
-import com.drf.coupon.model.response.CouponCalculateResponse;
 import com.drf.coupon.model.response.CouponIssueResponse;
 import com.drf.coupon.model.response.MemberCouponListResponse;
 import com.drf.coupon.service.CouponFacade;
@@ -19,7 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -140,69 +139,6 @@ class CouponControllerTest extends BaseControllerTest {
                             .header("X-User-Role", "USER"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.data").isEmpty());
-        }
-    }
-
-    @Nested
-    @DisplayName("쿠폰 적용 가격 계산")
-    class CalculateCoupon {
-
-        @Test
-        @DisplayName("계산 성공")
-        void calculateCoupon_success() throws Exception {
-            given(couponFacade.calculateCoupon(anyLong(), anyLong(), anyInt(), any()))
-                    .willReturn(new CouponCalculateResponse(15000, 3000, 12000));
-
-            mockMvc.perform(get("/members/me/coupons/1/calculate")
-                            .header("X-User-Id", 1)
-                            .header("X-User-Role", "USER")
-                            .param("orderAmount", "15000"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.data.orderAmount").value(15000))
-                    .andExpect(jsonPath("$.data.discountAmount").value(3000))
-                    .andExpect(jsonPath("$.data.finalAmount").value(12000));
-        }
-
-        @Test
-        @DisplayName("보유하지 않은 쿠폰이면 404 반환")
-        void calculateCoupon_memberCouponNotFound() throws Exception {
-            willThrow(new BusinessException(ErrorCode.MEMBER_COUPON_NOT_FOUND))
-                    .given(couponFacade).calculateCoupon(anyLong(), anyLong(), anyInt(), any());
-
-            mockMvc.perform(get("/members/me/coupons/999/calculate")
-                            .header("X-User-Id", 1)
-                            .header("X-User-Role", "USER")
-                            .param("orderAmount", "15000"))
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.message").value(ErrorCode.MEMBER_COUPON_NOT_FOUND.getMessage()));
-        }
-
-        @Test
-        @DisplayName("최소 주문 금액 미충족 시 400 반환")
-        void calculateCoupon_minOrderAmountNotMet() throws Exception {
-            willThrow(new BusinessException(ErrorCode.COUPON_MIN_ORDER_AMOUNT_NOT_MET))
-                    .given(couponFacade).calculateCoupon(anyLong(), anyLong(), anyInt(), any());
-
-            mockMvc.perform(get("/members/me/coupons/1/calculate")
-                            .header("X-User-Id", 1)
-                            .header("X-User-Role", "USER")
-                            .param("orderAmount", "5000"))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.message").value(ErrorCode.COUPON_MIN_ORDER_AMOUNT_NOT_MET.getMessage()));
-        }
-
-        @Test
-        @DisplayName("범위 지정 쿠폰인데 categoryAmount가 없으면 400 반환")
-        void calculateCoupon_scopeAmountRequired() throws Exception {
-            willThrow(new BusinessException(ErrorCode.SCOPE_AMOUNT_REQUIRED))
-                    .given(couponFacade).calculateCoupon(anyLong(), anyLong(), anyInt(), any());
-
-            mockMvc.perform(get("/members/me/coupons/1/calculate")
-                            .header("X-User-Id", 1)
-                            .header("X-User-Role", "USER")
-                            .param("orderAmount", "15000"))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.message").value(ErrorCode.SCOPE_AMOUNT_REQUIRED.getMessage()));
         }
     }
 }
