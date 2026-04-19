@@ -5,13 +5,13 @@ import com.drf.coupon.entity.ApplyType;
 import com.drf.coupon.entity.MemberCoupon;
 import com.drf.coupon.model.request.internal.InternalCartCouponItemRequest;
 import com.drf.coupon.model.request.internal.InternalCartCouponRequest;
-import com.drf.coupon.model.response.internal.CartCouponResult;
-import com.drf.coupon.model.response.internal.InternalCartCouponCalculateResponse;
-import com.drf.coupon.model.response.internal.InternalCartCouponListResponse;
+import com.drf.coupon.model.request.internal.InternalProductCouponRequest;
+import com.drf.coupon.model.response.internal.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -34,7 +34,41 @@ public class InternalCouponFacade {
             return new InternalCartCouponCalculateResponse(false, 0, List.of());
         }
 
-        CartCouponResult couponResult = result.coupons().get(0);
+        CartCouponResult couponResult = result.coupons().getFirst();
         return new InternalCartCouponCalculateResponse(true, couponResult.getDiscountAmount(), couponResult.getItems());
+    }
+
+    public ProductCouponCalculateResponse calculateProductCoupon(
+            long memberId, long memberCouponId, InternalProductCouponRequest request) {
+        MemberCoupon memberCoupon = internalCouponService.getUnusedMemberCoupon(memberId, memberCouponId);
+
+        InternalCartCouponItemRequest item = new InternalCartCouponItemRequest(
+                request.cartItemId(), request.productId(), request.price(), request.quantity(), request.categoryPath());
+
+        InternalCartCouponListResponse result = cartCouponCalculator.calculate(List.of(memberCoupon), List.of(item));
+
+        if (result.coupons().isEmpty()) {
+            return new ProductCouponCalculateResponse(false, 0);
+        }
+
+        return new ProductCouponCalculateResponse(true, result.coupons().getFirst().getDiscountAmount());
+    }
+
+    public InternalProductCouponListResponse getAvailableProductCoupons(InternalProductCouponRequest request) {
+        List<MemberCoupon> memberCoupons = internalCouponService.getUnusedCouponsByType(request.memberId(), ApplyType.PRODUCT);
+
+        InternalCartCouponItemRequest item = new InternalCartCouponItemRequest(
+                request.cartItemId(), request.productId(), request.price(), request.quantity(), request.categoryPath());
+
+        InternalCartCouponListResponse result = cartCouponCalculator.calculate(memberCoupons, List.of(item));
+
+        Set<Long> usedIds = Set.copyOf(request.usedMemberCouponIds());
+        List<ProductCouponResult> coupons = result.coupons().stream()
+                .map(cr -> new ProductCouponResult(
+                        cr.getMemberCouponId(), cr.getName(), cr.getDiscountAmount(),
+                        cr.isBest(), usedIds.contains(cr.getMemberCouponId())))
+                .toList();
+
+        return new InternalProductCouponListResponse(coupons);
     }
 }

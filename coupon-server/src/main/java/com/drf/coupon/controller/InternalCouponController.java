@@ -2,8 +2,11 @@ package com.drf.coupon.controller;
 
 import com.drf.common.model.CommonResponse;
 import com.drf.coupon.model.request.internal.InternalCartCouponRequest;
+import com.drf.coupon.model.request.internal.InternalProductCouponRequest;
 import com.drf.coupon.model.response.internal.InternalCartCouponCalculateResponse;
 import com.drf.coupon.model.response.internal.InternalCartCouponListResponse;
+import com.drf.coupon.model.response.internal.InternalProductCouponListResponse;
+import com.drf.coupon.model.response.internal.ProductCouponCalculateResponse;
 import com.drf.coupon.service.InternalCouponFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,5 +31,19 @@ public class InternalCouponController {
             @RequestBody InternalCartCouponRequest request) {
         return ResponseEntity.ok(CommonResponse.success(
                 internalCouponFacade.calculateCartCoupon(request.memberId(), memberCouponId, request.items())));
+    }
+
+    @PostMapping("/products/available")
+    public ResponseEntity<CommonResponse<InternalProductCouponListResponse>> getAvailableProductCoupons(
+            @RequestBody InternalProductCouponRequest request) {
+        return ResponseEntity.ok(CommonResponse.success(internalCouponFacade.getAvailableProductCoupons(request)));
+    }
+
+    @PostMapping("/products/{memberCouponId}/calculate")
+    public ResponseEntity<CommonResponse<ProductCouponCalculateResponse>> calculateProductCoupon(
+            @PathVariable long memberCouponId,
+            @RequestBody InternalProductCouponRequest request) {
+        return ResponseEntity.ok(CommonResponse.success(
+                internalCouponFacade.calculateProductCoupon(request.memberId(), memberCouponId, request)));
     }
 }

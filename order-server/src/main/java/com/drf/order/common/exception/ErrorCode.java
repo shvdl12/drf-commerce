@@ -13,6 +13,7 @@ public enum ErrorCode implements ErrorCodeSpec {
     PRODUCT_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "장바구니에 추가할 수 없는 상품입니다."),
     CART_NOT_FOUND(HttpStatus.NOT_FOUND, "장바구니가 존재하지 않습니다."),
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "장바구니에 없는 상품입니다."),
+    COUPON_NOT_APPLICABLE(HttpStatus.BAD_REQUEST, "적용할 수 없는 쿠폰입니다."),
     ;
 
     private final HttpStatus status;

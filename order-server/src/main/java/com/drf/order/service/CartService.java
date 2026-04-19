@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -66,5 +67,24 @@ public class CartService {
         Cart cart = cartRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
         cart.updateCouponId(memberCouponId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Long> getUsedMemberCouponIds(Long memberId) {
+        Cart cart = cartRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
+        return cartItemRepository.findByCartId(cart.getId()).stream()
+                .map(CartItem::getCouponId)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    @Transactional
+    public void updateCartItemCoupon(Long memberId, Long productId, Long memberCouponId) {
+        Cart cart = cartRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
+        CartItem item = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
+        item.updateCouponId(memberCouponId);
     }
 }
