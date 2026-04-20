@@ -124,9 +124,12 @@ public class Coupon extends BaseTimeEntity {
     }
 
     public void validateCouponAvailability() {
+        if (status != CouponStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.COUPON_STATUS_INVALID);
+        }
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(validFrom) || now.isAfter(validUntil)) {
-            throw new BusinessException(ErrorCode.COUPON_NOT_AVAILABLE);
+            throw new BusinessException(ErrorCode.COUPON_PERIOD_INVALID);
         }
     }
 }

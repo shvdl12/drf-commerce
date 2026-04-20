@@ -109,7 +109,7 @@ class CouponValidatorTest {
             assertThatThrownBy(() -> validator.validate(context))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
-                    .isEqualTo(ErrorCode.COUPON_NOT_AVAILABLE);
+                    .isEqualTo(ErrorCode.COUPON_PERIOD_INVALID);
         }
     }
 

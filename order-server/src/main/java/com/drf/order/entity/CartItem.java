@@ -55,4 +55,8 @@ public class CartItem extends BaseTimeEntity {
     public void updateCouponId(Long couponId) {
         this.couponId = couponId;
     }
+
+    public void clearCoupon() {
+        this.couponId = null;
+    }
 }

@@ -9,7 +9,8 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum ErrorCode implements ErrorCodeSpec {
     COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 쿠폰입니다."),
-    COUPON_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "발급 가능한 기간이 아닙니다."),
+    COUPON_STATUS_INVALID(HttpStatus.BAD_REQUEST, "쿠폰 상태가 유효하지 않습니다."),
+    COUPON_PERIOD_INVALID(HttpStatus.BAD_REQUEST, "쿠폰 사용 가능 기간이 아닙니다."),
     COUPON_ALREADY_ISSUED(HttpStatus.CONFLICT, "이미 발급받은 쿠폰입니다."),
     COUPON_EXHAUSTED(HttpStatus.CONFLICT, "쿠폰 수량이 소진되었습니다."),
     MEMBER_COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, "보유하지 않은 쿠폰입니다."),

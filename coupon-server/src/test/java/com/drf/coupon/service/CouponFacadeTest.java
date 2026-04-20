@@ -1,7 +1,9 @@
 package com.drf.coupon.service;
 
-import com.drf.coupon.entity.*;
-import com.drf.coupon.model.response.CouponCalculateResponse;
+import com.drf.coupon.entity.ApplyType;
+import com.drf.coupon.entity.Coupon;
+import com.drf.coupon.entity.CouponStatus;
+import com.drf.coupon.entity.DiscountType;
 import com.drf.coupon.model.response.CouponIssueResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,15 +44,6 @@ class CouponFacadeTest {
                 .build();
     }
 
-    private MemberCoupon memberCoupon(Coupon coupon) {
-        return MemberCoupon.builder()
-                .id(1L)
-                .coupon(coupon)
-                .memberId(1L)
-                .status(MemberCouponStatus.UNUSED)
-                .build();
-    }
-
     @Test
     @DisplayName("issueCoupon - 검증 후 발급 순서로 서비스 호출")
     void issueCoupon_callsValidateThenIssue() {
@@ -66,25 +59,5 @@ class CouponFacadeTest {
         assertThat(result.memberCouponId()).isEqualTo(10L);
         then(couponService).should().getCouponForIssue(1L, 1L);
         then(couponService).should().issueCoupon(coupon, 1L);
-    }
-
-    @Test
-    @DisplayName("calculateCoupon - fetch 후 calculate 순서로 서비스 호출")
-    void calculateCoupon_callsFetchThenCalculate() {
-        // given
-        Coupon coupon = coupon();
-        MemberCoupon memberCoupon = memberCoupon(coupon);
-        CouponCalculateResponse expected = new CouponCalculateResponse(15000, 3000, 12000);
-
-        given(couponService.getMemberCoupon(1L, 1L)).willReturn(memberCoupon);
-        given(couponService.calculate(memberCoupon, 15000, null)).willReturn(expected);
-
-        // when
-        CouponCalculateResponse result = couponFacade.calculateCoupon(1L, 1L, 15000, null);
-
-        // then
-        assertThat(result).isEqualTo(expected);
-        then(couponService).should().getMemberCoupon(1L, 1L);
-        then(couponService).should().calculate(memberCoupon, 15000, null);
     }
 }
