@@ -66,29 +66,55 @@ sequenceDiagram
 
 ---
 
-## 2. 주문 상태 모델
+## 2. 주문 / 결제 상태 모델
+
+### order.status (결제/클레임)
 
 ```
-PENDING → PAID → PREPARING → SHIPPING → DELIVERED
+PENDING → PAID → PARTIAL_CANCELLED (일부 취소 발생)
+               → CANCELLED (전체 취소)
        ↘ PAYMENT_FAILED
        ↘ EXPIRED (TTL 초과 스케줄러 처리)
-       ↘ CANCELLED
 ```
 
-| 상태             | 설명                          |
-|----------------|-----------------------------|
-| PENDING        | 주문 생성 직후, 결제 완료 전           |
-| PAID           | 결제 완료                       |
-| PAYMENT_FAILED | 결제 실패 (보상 완료)               |
-| EXPIRED        | PENDING TTL 초과로 스케줄러가 보상 처리 |
-| PREPARING      | 상품 준비 중                     |
-| SHIPPING       | 배송 중                        |
-| DELIVERED      | 배송 완료                       |
-| CANCELLED      | 주문 취소                       |
+| 상태                | 설명                          |
+|-------------------|-----------------------------|
+| PENDING           | 주문 생성 직후, 결제 완료 전           |
+| PAID              | 결제 완료                       |
+| PAYMENT_FAILED    | 결제 실패 (보상 완료)               |
+| EXPIRED           | PENDING TTL 초과로 스케줄러가 보상 처리 |
+| PARTIAL_CANCELLED | 일부 아이템 취소 발생                |
+| CANCELLED         | 전체 취소                       |
+
+### order_item.status (아이템 생명주기)
+
+```
+PENDING → ORDERED → PREPARING → SHIPPING → DELIVERED
+                  → CANCELLED
+                  → RETURN_REQUESTED → RETURNED
+        → EXPIRED
+        → PAYMENT_FAILED
+```
+
+| 상태               | 설명                          |
+|------------------|-----------------------------|
+| PENDING          | 주문 생성 직후, 결제 완료 전           |
+| ORDERED          | 결제 완료, 처리 대기                |
+| PREPARING        | 상품 준비 중                     |
+| SHIPPING         | 배송 중                        |
+| DELIVERED        | 배송 완료                       |
+| CANCELLED        | 취소 완료                       |
+| RETURN_REQUESTED | 반품 요청 (회수 중)                |
+| RETURNED         | 반품 완료                       |
+| EXPIRED          | PENDING TTL 초과로 스케줄러가 만료 처리 |
+| PAYMENT_FAILED   | 결제 실패로 주문 불성립               |
+
+> 아이템마다 배송 일정이 다를 수 있으므로 배송 상태는 order_item이 진실의 원천(source of truth).  
+> order 레벨 배송 현황이 필요한 경우 item 상태를 집계하여 계산한다.
 
 ---
 
-## 2. 주문 생성 API
+## 3. 주문 생성 API
 
 ### 요청
 
@@ -129,7 +155,7 @@ Idempotency-Key: {client-generated-uuid}   # 필수 헤더, 누락 시 400
 
 ---
 
-## 3. 멱등성 처리
+## 4. 멱등성 처리
 
 ### 클라이언트 → 주문 서버
 
@@ -146,11 +172,11 @@ Idempotency-Key: {client-generated-uuid}   # 필수 헤더, 누락 시 400
 
 ---
 
-## 4. 주문 생성 플로우
+## 5. 주문 생성 플로우
 
 ```
 1. 멱등성 체크 (IdempotencyAspect)
-2. =++++_+가격 재검증
+2. 가격 재검증
    - cart_item 기반 서버 재계산 (상품 할인가 + 쿠폰 할인 + 배송비)
    - expectedAmount 불일치 시 400 (가격 변동 안내)
 3. member-server에서 배송지 스냅샷 조회
@@ -167,7 +193,7 @@ Idempotency-Key: {client-generated-uuid}   # 필수 헤더, 누락 시 400
 
 ---
 
-## 5. 보상 트랜잭션 정책
+## 6. 보상 트랜잭션 정책
 
 | 실패 지점        | 보상 대상               |
 |--------------|---------------------|
@@ -180,7 +206,7 @@ Idempotency-Key: {client-generated-uuid}   # 필수 헤더, 누락 시 400
 
 ---
 
-## 6. 결제 완료 이벤트 소비
+## 7. 결제 완료 이벤트 소비
 
 결제 완료 이벤트 발행 후 각 서버가 비동기 소비:
 
@@ -194,7 +220,7 @@ Idempotency-Key: {client-generated-uuid}   # 필수 헤더, 누락 시 400
 
 ---
 
-## 7. PENDING 만료 처리
+## 8. PENDING 만료 처리
 
 - PENDING 상태로 일정 시간(예: 30분) 초과한 주문을 스케줄러가 주기적으로 조회
 - 각 주문에 대해 쿠폰 선점 해제 + 재고 선점 해제 → 상태 EXPIRED 처리
@@ -203,7 +229,14 @@ Idempotency-Key: {client-generated-uuid}   # 필수 헤더, 누락 시 400
 
 ---
 
-## 8. 부분 취소 환불 정책
+## 9. 부분 취소 / 반품 환불 정책
+
+### 반품 환불
+
+- 반품 요청 시 `order_event(RETURN_REQUESTED)` + `order_event_item` 생성, `order_item.status → RETURN_REQUESTED`
+- 반품 회수 확인 후 환불 처리: `order_event(RETURN_COMPLETED)` + `payment_event(PARTIAL_REFUND or FULL_REFUND)` 생성,
+  `order_item.status → RETURNED`
+- 환불 금액 계산은 아래 취소 정책과 동일하게 적용
 
 ### 상품 쿠폰 적용 아이템 취소
 
@@ -233,7 +266,112 @@ Idempotency-Key: {client-generated-uuid}   # 필수 헤더, 누락 시 400
 
 ---
 
-## 9. 테이블 설계
+## 10. 취소 API
+
+### 요청
+
+```
+POST /orders/{orderId}/cancel
+```
+
+```json
+{
+  "orderItemIds": [
+    1,
+    2
+  ],
+  "reason": "단순 변심"
+}
+```
+
+- `orderItemIds`가 주문의 전체 아이템이면 전체 취소, 일부면 부분 취소
+
+### 처리 흐름
+
+```
+1. 취소 가능 상태 검증 (ORDERED 또는 PREPARING만 허용)
+2. order_item.status → CANCELLED
+3. order_event(ORDER_CANCELLED or ORDER_PARTIALLY_CANCELLED) + order_event_item 생성
+4. order.status → CANCELLED or PARTIAL_CANCELLED
+5. payment.status → REFUND_REQUESTED
+6. payment_event(REFUND_REQUESTED) 생성
+```
+
+---
+
+## 11. 반품 API
+
+### 반품 요청
+
+```
+POST /orders/{orderId}/returns
+```
+
+```json
+{
+  "orderItemIds": [
+    1
+  ],
+  "reason": "상품 불량"
+}
+```
+
+- DELIVERED 상태 아이템만 반품 요청 가능
+
+### 처리 흐름
+
+```
+1. 반품 가능 상태 검증 (DELIVERED만 허용)
+2. order_item.status → RETURN_REQUESTED
+3. order_event(RETURN_REQUESTED) + order_event_item 생성
+4. payment.status → REFUND_REQUESTED
+5. payment_event(REFUND_REQUESTED) 생성
+```
+
+### 반품 완료 처리 (관리자)
+
+```
+POST /admin/orders/{orderId}/returns/complete
+```
+
+```json
+{
+  "orderItemIds": [
+    1
+  ]
+}
+```
+
+### 처리 흐름
+
+```
+1. order_item.status → RETURNED
+2. order_event(RETURN_COMPLETED) 생성
+3. payment_event(PARTIAL_REFUNDED or FULL_REFUNDED) 생성
+4. payment.status → PARTIAL_REFUNDED or REFUNDED
+```
+
+---
+
+## 12. 배송 상태 업데이트 (이벤트 소비)
+
+- 배송 도메인이 외부 배송사로부터 폴링 또는 웹훅으로 상태 수신
+- 배송 도메인이 배송 상태 변경 이벤트 발행
+- order-server가 이벤트 소비 → order_item.status 업데이트
+- 허용 전이: `ORDERED → PREPARING → SHIPPING → DELIVERED` (순방향만)
+
+---
+
+## 13. 환불 실패 처리 정책
+
+- `payment.status`는 `REFUND_REQUESTED` 유지
+- `payment_event(REFUND_FAILED)` 기록
+- 최대 3회 자동 재시도 (지수 백오프)
+- 3회 실패 시 수동 처리 대기 (관리자 알림)
+
+---
+
+## 14. 테이블 설계
 
 ```sql
 CREATE TABLE `order` (
@@ -245,7 +383,8 @@ CREATE TABLE `order` (
   product_discount_amount INT          NOT NULL DEFAULT 0 COMMENT '상품 자체 할인 합계',
   coupon_discount_amount  INT          NOT NULL DEFAULT 0 COMMENT '쿠폰 할인 합계 (주문 + 상품)',
   final_amount            INT          NOT NULL COMMENT '실제 결제금액',
-  status                  VARCHAR(20)  NOT NULL COMMENT 'PENDING, PAID, PAYMENT_FAILED, EXPIRED, PREPARING, SHIPPING, DELIVERED, CANCELLED',
+  status                  VARCHAR(20)  NOT NULL COMMENT 'PENDING, PAID, PARTIAL_CANCELLED, CANCELLED, PAYMENT_FAILED, EXPIRED',
+  refunded_amount         INT          NOT NULL DEFAULT 0 COMMENT '누적 환불액',
   member_coupon_id        BIGINT       DEFAULT NULL COMMENT '적용된 주문(장바구니) 쿠폰',
   receiver_name           VARCHAR(50)  NOT NULL COMMENT '배송지 스냅샷',
   receiver_phone          VARCHAR(20)  NOT NULL,
@@ -268,33 +407,53 @@ CREATE TABLE order_item (
   order_coupon_discount_amount   INT          NOT NULL DEFAULT 0 COMMENT '주문 쿠폰 안분액',
   final_amount                   INT          NOT NULL COMMENT 'discounted_price * quantity - product_coupon_discount - order_coupon_discount',
   member_coupon_id               BIGINT       DEFAULT NULL COMMENT '적용된 상품 쿠폰',
-  status                         VARCHAR(20)  NOT NULL DEFAULT 'ORDERED' COMMENT 'ORDERED, CANCELLED',
+  status                         VARCHAR(20)  NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING, ORDERED, PREPARING, SHIPPING, DELIVERED, CANCELLED, EXPIRED, PAYMENT_FAILED, RETURN_REQUESTED, RETURNED',
   created_at                     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at                     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (order_id) REFERENCES `order`(id)
 );
 
-CREATE TABLE order_history (
-  id          BIGINT      AUTO_INCREMENT PRIMARY KEY,
-  order_id    BIGINT      NOT NULL,
-  from_status VARCHAR(20)          COMMENT '최초 생성 시 NULL',
-  to_status   VARCHAR(20) NOT NULL,
-  reason      VARCHAR(255),
-  created_at  DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+CREATE TABLE order_event (
+  id         BIGINT      AUTO_INCREMENT PRIMARY KEY,
+  order_id   BIGINT      NOT NULL,
+  event_type VARCHAR(20) NOT NULL COMMENT 'ORDER_CREATED, ORDER_PARTIALLY_CANCELLED, ORDER_CANCELLED, RETURN_REQUESTED, RETURN_COMPLETED',
+  reason     VARCHAR(255),
+  created_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (order_id) REFERENCES `order`(id)
 );
 
-CREATE TABLE order_item_cancel_history (
-  id               BIGINT     AUTO_INCREMENT PRIMARY KEY,
-  order_id         BIGINT     NOT NULL,
-  order_item_id    BIGINT     NOT NULL,
-  refund_amount    INT        NOT NULL,
-  coupon_returned  TINYINT(1) NOT NULL DEFAULT 0,
-  member_coupon_id BIGINT     DEFAULT NULL COMMENT '반환된 쿠폰 ID',
-  cancel_reason    VARCHAR(255),
-  created_at       DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (order_id)      REFERENCES `order`(id),
-  FOREIGN KEY (order_item_id) REFERENCES order_item(id)
+CREATE TABLE order_event_item (
+  id             BIGINT   AUTO_INCREMENT PRIMARY KEY,
+  order_event_id BIGINT   NOT NULL,
+  order_item_id  BIGINT   NOT NULL,
+  quantity       INT      NOT NULL,
+  refund_amount  INT      NULL DEFAULT NULL COMMENT 'ORDER_CREATED 이벤트는 NULL',
+  created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_event_id) REFERENCES order_event(id),
+  FOREIGN KEY (order_item_id)  REFERENCES order_item(id)
+);
+
+CREATE TABLE payment (
+  id              BIGINT      AUTO_INCREMENT PRIMARY KEY,
+  order_id        BIGINT      NOT NULL UNIQUE,
+  amount          INT         NOT NULL,
+  method          VARCHAR(20) NOT NULL,
+  status          VARCHAR(20) NOT NULL DEFAULT 'READY' COMMENT 'READY, PAID, FAILED, REFUND_REQUESTED, PARTIAL_REFUNDED, REFUNDED',
+  refunded_amount INT         NOT NULL DEFAULT 0 COMMENT '누적 환불액',
+  pg_tid          VARCHAR(100) NULL UNIQUE,
+  expires_at      DATETIME    NOT NULL,
+  created_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE payment_event (
+  id             BIGINT      AUTO_INCREMENT PRIMARY KEY,
+  payment_id     BIGINT      NOT NULL,
+  event_type     VARCHAR(20) NOT NULL COMMENT 'PAYMENT_COMPLETED, REFUND_REQUESTED, REFUND_FAILED, PARTIAL_REFUNDED, FULL_REFUNDED',
+  amount         INT         NOT NULL,
+  order_event_id BIGINT      DEFAULT NULL COMMENT '취소, 반품으로 인한 환불인 경우 참조 (DB FK 없음)',
+  created_at     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (payment_id) REFERENCES payment(id)
 );
 ```
 
@@ -309,11 +468,19 @@ order.final_amount            = SUM(order_item.final_amount) + delivery_fee
 
 ### 이력 적재 시점
 
-| 이벤트        | order_history            | order_item_cancel_history         |
-|------------|--------------------------|-----------------------------------|
-| 주문 생성      | NULL → PENDING           | -                                 |
-| 결제 완료      | PENDING → PAID           | -                                 |
-| 결제 실패      | PENDING → PAYMENT_FAILED | -                                 |
-| PENDING 만료 | PENDING → EXPIRED        | -                                 |
-| 아이템 부분 취소  | -                        | refund_amount, coupon_returned 기록 |
-| 전체 취소      | PAID → CANCELLED         | 각 아이템별 row                        |
+| 이벤트      | order.status      | order_event               | order_event_item | payment.status               | payment_event                     |
+|----------|-------------------|---------------------------|------------------|------------------------------|-----------------------------------|
+| 결제 완료    | PAID              | ORDER_CREATED             | -                | PAID                         | PAYMENT_COMPLETED                 |
+| 부분 취소    | PARTIAL_CANCELLED | ORDER_PARTIALLY_CANCELLED | 취소 아이템 row       | REFUND_REQUESTED             | REFUND_REQUESTED                  |
+| 전체 취소    | CANCELLED         | ORDER_CANCELLED           | 전체 아이템 row       | REFUND_REQUESTED             | REFUND_REQUESTED                  |
+| 부분 환불 완료 | -                 | -                         | -                | PARTIAL_REFUNDED             | PARTIAL_REFUNDED                  |
+| 전체 환불 완료 | -                 | -                         | -                | REFUNDED                     | FULL_REFUNDED                     |
+| 반품 요청    | -                 | RETURN_REQUESTED          | 반품 아이템 row       | REFUND_REQUESTED             | REFUND_REQUESTED                  |
+| 반품 완료 환불 | -                 | RETURN_COMPLETED          | -                | PARTIAL_REFUNDED or REFUNDED | PARTIAL_REFUNDED or FULL_REFUNDED |
+
+---
+
+## 15. TODO
+
+- 교환 기능: product_option, product_variant 테이블 설계 선행 필요
+- payment, payment_event → 결제 서비스 문서로 이관 고려
