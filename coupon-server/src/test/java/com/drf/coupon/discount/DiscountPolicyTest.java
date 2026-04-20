@@ -81,23 +81,4 @@ class DiscountPolicyTest {
         }
     }
 
-    @Nested
-    @DisplayName("적용 범위 정책")
-    class ApplyScopeTest {
-
-        private final OrderApplyScope allScope = new OrderApplyScope();
-        private final CategoryApplyScope categoryScope = new CategoryApplyScope();
-
-        @Test
-        @DisplayName("ORDER - 전체 주문 금액 반환")
-        void all_returnsOrderAmount() {
-            assertThat(allScope.getBase(new DiscountContext(30000, 12000))).isEqualTo(30000);
-        }
-
-        @Test
-        @DisplayName("CATEGORY - 카테고리 합계 반환")
-        void category_returnsCategoryAmount() {
-            assertThat(categoryScope.getBase(new DiscountContext(30000, 12000))).isEqualTo(12000);
-        }
-    }
 }

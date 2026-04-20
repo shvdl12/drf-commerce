@@ -60,4 +60,11 @@ public class CartService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
         return cartItemRepository.findByCartId(cart.getId());
     }
+
+    @Transactional
+    public void updateCartCoupon(Long memberId, Long memberCouponId) {
+        Cart cart = cartRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_NOT_FOUND));
+        cart.updateCouponId(memberCouponId);
+    }
 }

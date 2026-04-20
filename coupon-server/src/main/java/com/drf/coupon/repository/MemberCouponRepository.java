@@ -1,5 +1,6 @@
 package com.drf.coupon.repository;
 
+import com.drf.coupon.entity.ApplyType;
 import com.drf.coupon.entity.MemberCoupon;
 import com.drf.coupon.entity.MemberCouponStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -19,6 +20,9 @@ public interface MemberCouponRepository extends JpaRepository<MemberCoupon, Long
 
     @EntityGraph(attributePaths = {"coupon"})
     Optional<MemberCoupon> findByIdAndMemberIdAndStatus(Long id, Long memberId, MemberCouponStatus status);
+
+    @EntityGraph(attributePaths = {"coupon"})
+    List<MemberCoupon> findByMemberIdAndStatusAndCouponApplyType(Long memberId, MemberCouponStatus status, ApplyType applyType);
 
     long countByMemberIdAndCouponId(Long memberId, Long couponId);
 

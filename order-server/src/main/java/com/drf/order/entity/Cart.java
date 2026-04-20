@@ -31,4 +31,8 @@ public class Cart extends BaseTimeEntity {
     public static Cart of(Long memberId) {
         return new Cart(memberId);
     }
+
+    public void updateCouponId(Long couponId) {
+        this.couponId = couponId;
+    }
 }
