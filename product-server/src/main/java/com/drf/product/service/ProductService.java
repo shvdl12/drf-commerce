@@ -9,8 +9,10 @@ import com.drf.product.entity.ProductStock;
 import com.drf.product.event.ProductCreatedEvent;
 import com.drf.product.event.ProductDeletedEvent;
 import com.drf.product.event.ProductUpdatedEvent;
+import com.drf.product.model.request.ProductBatchRequest;
 import com.drf.product.model.request.ProductCreateRequest;
 import com.drf.product.model.request.ProductUpdateRequest;
+import com.drf.product.model.response.InternalProductResponse;
 import com.drf.product.model.response.ProductDetailResponse;
 import com.drf.product.model.response.ProductListResponse;
 import com.drf.product.repository.CategoryRepository;
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+//TODO 퍼사드 적용 및 카테고리 path 생성 로직 개선
 public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
@@ -100,6 +103,36 @@ public class ProductService {
         ProductStock productStock = productStockRepository.findById(id)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
         return ProductDetailResponse.from(product, productStock);
+    }
+
+    private static List<Long> buildCategoryPath(Category category) {
+        Deque<Long> path = new ArrayDeque<>();
+        Category current = category;
+        while (current != null) {
+            path.addFirst(current.getId());
+            current = current.getParent();
+        }
+        return List.copyOf(path);
+    }
+
+    @Transactional(readOnly = true)
+    public List<InternalProductResponse> getProductsByIds(ProductBatchRequest request) {
+        List<Product> products = productRepository.findByIdIn(request.ids());
+
+        return products.stream()
+                .map(product -> {
+                    int discountAmount = calculateDisCountAmount(product.getPrice(), product.getDiscountRate());
+                    return InternalProductResponse.from(
+                            product,
+                            discountAmount,
+                            product.getPrice() - discountAmount,
+                            buildCategoryPath(product.getCategory())
+                    );
+                }).toList();
+    }
+
+    private int calculateDisCountAmount(int price, int discountRate) {
+        return price * discountRate / 100 / 100 * 100;
     }
 
     @Transactional(readOnly = true)

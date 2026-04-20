@@ -43,6 +43,8 @@ public class GlobalExceptionHandler {
             }
         }
 
+        log.error("HttpMessageNotReadableException occurred", e);
+
         return ResponseEntity.badRequest().build();
     }
 

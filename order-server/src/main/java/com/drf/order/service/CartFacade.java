@@ -2,7 +2,7 @@ package com.drf.order.service;
 
 import com.drf.common.exception.BusinessException;
 import com.drf.order.client.ProductClient;
-import com.drf.order.client.dto.ProductResponse;
+import com.drf.order.client.dto.response.ProductResponse;
 import com.drf.order.common.exception.ErrorCode;
 import com.drf.order.entity.Cart;
 import com.drf.order.model.request.CartAddRequest;

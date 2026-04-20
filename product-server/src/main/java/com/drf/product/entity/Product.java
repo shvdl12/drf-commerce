@@ -45,6 +45,9 @@ public class Product extends BaseTimeEntity {
 
     private LocalDateTime deletedAt;
 
+    @OneToOne(mappedBy = "product", fetch = FetchType.LAZY)
+    private ProductStock stock;
+
     public static Product create(Category category, String name, int price, String description,
                                  Integer discountRate, LocalDateTime saleStartAt, LocalDateTime saleEndAt) {
         return Product.builder()
