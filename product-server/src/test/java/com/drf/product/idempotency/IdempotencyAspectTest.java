@@ -5,7 +5,6 @@ import com.drf.common.exception.errorcode.CommonErrorCode;
 import com.drf.common.idempotency.*;
 import com.drf.common.model.CommonResponse;
 import com.drf.common.util.JsonConverter;
-import com.drf.product.model.response.StockReserveResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.junit.jupiter.api.AfterEach;
@@ -13,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,8 +20,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-
-import org.mockito.ArgumentCaptor;
 
 import java.util.Optional;
 
@@ -138,8 +136,8 @@ class IdempotencyAspectTest {
         ArgumentCaptor<String> tokenCaptor = ArgumentCaptor.forClass(String.class);
         given(idempotencyLock.acquire(eq(IDEMPOTENCY_KEY), eq(SCOPE), tokenCaptor.capture())).willReturn(true);
 
-        CommonResponse<StockReserveResponse> body = CommonResponse.success(new StockReserveResponse(1L, 90));
-        ResponseEntity<CommonResponse<StockReserveResponse>> result = ResponseEntity.ok(body);
+        CommonResponse<Void> body = CommonResponse.success();
+        ResponseEntity<CommonResponse<Void>> result = ResponseEntity.ok(body);
         given(joinPoint.proceed()).willReturn(result);
         given(jsonConverter.toJson(body)).willReturn("{\"code\":\"SUCCESS\"}");
 

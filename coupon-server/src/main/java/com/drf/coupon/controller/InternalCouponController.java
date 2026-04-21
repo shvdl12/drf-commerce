@@ -2,7 +2,7 @@ package com.drf.coupon.controller;
 
 import com.drf.common.model.CommonResponse;
 import com.drf.coupon.model.request.internal.InternalCartCouponRequest;
-import com.drf.coupon.model.request.internal.InternalCouponReserveRequest;
+import com.drf.coupon.model.request.internal.InternalCouponBatchReserveRequest;
 import com.drf.coupon.model.request.internal.InternalProductCouponRequest;
 import com.drf.coupon.model.response.internal.InternalCartCouponCalculateResponse;
 import com.drf.coupon.model.response.internal.InternalCartCouponListResponse;
@@ -48,19 +48,17 @@ public class InternalCouponController {
                 internalCouponFacade.calculateProductCoupon(request.memberId(), memberCouponId, request)));
     }
 
-    @PostMapping("/{memberCouponId}/reserve")
+    @PostMapping("/reserve")
     public ResponseEntity<CommonResponse<Void>> reserveCoupon(
-            @PathVariable long memberCouponId,
-            @RequestBody InternalCouponReserveRequest request) {
-        internalCouponFacade.reserveCoupon(memberCouponId, request.memberId());
-        return ResponseEntity.ok(CommonResponse.success(null));
+            @RequestBody InternalCouponBatchReserveRequest request) {
+        internalCouponFacade.batchReserveCoupon(request);
+        return ResponseEntity.ok(CommonResponse.success());
     }
 
-    @DeleteMapping("/{memberCouponId}/reserve")
+    @DeleteMapping("/reserve")
     public ResponseEntity<CommonResponse<Void>> releaseCoupon(
-            @PathVariable long memberCouponId,
-            @RequestBody InternalCouponReserveRequest request) {
-        internalCouponFacade.releaseCoupon(memberCouponId, request.memberId());
-        return ResponseEntity.ok(CommonResponse.success(null));
+            @RequestBody InternalCouponBatchReserveRequest request) {
+        internalCouponFacade.batchReleaseCoupon(request);
+        return ResponseEntity.ok(CommonResponse.success());
     }
 }

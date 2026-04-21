@@ -16,6 +16,11 @@ public class CommonResponse<T> {
     private final String message;
     private final T data;
 
+    public static <T> CommonResponse<T> success() {
+        return CommonResponse.<T>builder()
+                .build();
+    }
+
     public static <T> CommonResponse<T> success(T data) {
         return CommonResponse.<T>builder()
                 .data(data)

@@ -5,14 +5,17 @@ import com.drf.coupon.common.exception.ErrorCode;
 import com.drf.coupon.entity.ApplyType;
 import com.drf.coupon.entity.MemberCoupon;
 import com.drf.coupon.entity.MemberCouponStatus;
+import com.drf.coupon.model.request.internal.InternalCouponBatchReserveRequest;
 import com.drf.coupon.repository.MemberCouponRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InternalCouponService {
@@ -32,16 +35,23 @@ public class InternalCouponService {
     }
 
     @Transactional
-    public void reserveCoupon(long memberCouponId, long memberId) {
-        if (memberCouponRepository.reserve(memberCouponId, memberId, LocalDateTime.now()) == 0) {
-            throw new BusinessException(ErrorCode.COUPON_RESERVE_FAILED);
+    public void batchReserveCoupon(List<InternalCouponBatchReserveRequest.InternalCouponBatchReserveItem> items) {
+        for (var item : items) {
+            if (memberCouponRepository.reserve(item.memberCouponId(), item.memberId(), LocalDateTime.now()) == 0) {
+                throw new BusinessException(ErrorCode.COUPON_RESERVE_FAILED);
+            }
         }
     }
 
-    @Transactional
-    public void releaseCoupon(long memberCouponId, long memberId) {
-        if (memberCouponRepository.release(memberCouponId, memberId) == 0) {
-            throw new BusinessException(ErrorCode.COUPON_RELEASE_FAILED);
+    public void batchReleaseCoupon(List<InternalCouponBatchReserveRequest.InternalCouponBatchReserveItem> items) {
+        for (var item : items) {
+            try {
+                if (memberCouponRepository.release(item.memberCouponId(), item.memberId()) == 0) {
+                    throw new BusinessException(ErrorCode.COUPON_RELEASE_FAILED);
+                }
+            } catch (Exception e) {
+                log.error("Release failed for memberCouponId={}", item.memberCouponId(), e);
+            }
         }
     }
 }

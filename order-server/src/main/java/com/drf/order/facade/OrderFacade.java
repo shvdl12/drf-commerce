@@ -7,6 +7,9 @@ import com.drf.order.client.MemberClient;
 import com.drf.order.client.PaymentClient;
 import com.drf.order.client.ProductClient;
 import com.drf.order.client.dto.request.*;
+import com.drf.order.client.dto.request.CouponBatchReserveRequest.CouponBatchReserveItem;
+import com.drf.order.client.dto.request.StockBatchReleaseRequest.StockBatchReleaseItem;
+import com.drf.order.client.dto.request.StockBatchReserveRequest.StockBatchReserveItem;
 import com.drf.order.client.dto.response.*;
 import com.drf.order.common.exception.ErrorCode;
 import com.drf.order.entity.Cart;
@@ -35,6 +38,8 @@ public class OrderFacade {
 
     private static final int FREE_SHIPPING_THRESHOLD = 50_000;
     private static final int SHIPPING_FEE = 3_000;
+    private static final String STOCK_RESERVE_KEY_SUFFIX = ":STOCK_RESERVE";
+    private static final String STOCK_RELEASE_KEY_SUFFIX = ":STOCK_RELEASE";
 
     private final CartService cartService;
     private final ProductClient productClient;
@@ -82,32 +87,27 @@ public class OrderFacade {
                 amounts.couponDiscountAmount(), amounts.finalAmount());
 
         // 8. 재고 선점
-        List<OrderLineItem> reservedItems = new ArrayList<>();
-        for (OrderLineItem item : lineItems) {
-            String reserveKey = idempotencyKey + ":RESERVE:" + item.getProductId();
-            try {
-                productClient.reserveStock(item.getProductId(), reserveKey,
-                        new StockReserveRequest(item.getQuantity()));
-                reservedItems.add(item);
-            } catch (Exception e) {
-                log.error("Stock reserve failed for productId={}", item.getProductId(), e);
-                reservedItems.forEach(ri -> releaseStockWithRetry(ri, idempotencyKey));
-                orderService.failOrder(order.getId());
-                throw new BusinessException(ErrorCode.ORDER_STOCK_INSUFFICIENT);
-            }
+        try {
+            productClient.reserveStock(idempotencyKey + STOCK_RESERVE_KEY_SUFFIX,
+                    new StockBatchReserveRequest(lineItems.stream()
+                            .map(item -> new StockBatchReserveItem(item.getProductId(), item.getQuantity()))
+                            .toList()));
+        } catch (Exception e) {
+            log.error("Stock batch reserve failed", e);
+            orderService.failOrder(order.getId());
+            throw new BusinessException(ErrorCode.ORDER_STOCK_INSUFFICIENT);
         }
 
         // 9. 쿠폰 선점
         List<Long> allMemberCouponIds = buildCouponIds(cart.getCouponId(), lineItems);
-        List<Long> reservedCoupons = new ArrayList<>();
-        for (Long mcId : allMemberCouponIds) {
+        if (!allMemberCouponIds.isEmpty()) {
             try {
-                couponClient.reserveCoupon(mcId, new CouponReserveRequest(memberId));
-                reservedCoupons.add(mcId);
+                couponClient.reserveCoupon(new CouponBatchReserveRequest(allMemberCouponIds.stream()
+                        .map(id -> new CouponBatchReserveItem(id, memberId))
+                        .toList()));
             } catch (Exception e) {
-                log.error("Coupon reserve failed for memberCouponId={}", mcId, e);
-                reservedCoupons.forEach(rc -> releaseCouponWithRetry(rc, memberId));
-                lineItems.forEach(item -> releaseStockWithRetry(item, idempotencyKey));
+                log.error("Coupon batch reserve failed", e);
+                releaseStocks(lineItems, idempotencyKey);
                 orderService.failOrder(order.getId());
                 throw new BusinessException(ErrorCode.ORDER_COUPON_UNAVAILABLE);
             }
@@ -118,8 +118,8 @@ public class OrderFacade {
             paymentClient.pay(new PaymentRequest(order.getId(), amounts.finalAmount(), request.paymentMethodId()));
         } catch (Exception e) {
             log.error("Payment failed for orderId={}", order.getId(), e);
-            reservedCoupons.forEach(rc -> releaseCouponWithRetry(rc, memberId));
-            lineItems.forEach(item -> releaseStockWithRetry(item, idempotencyKey));
+            releaseCoupons(allMemberCouponIds, memberId);
+            releaseStocks(lineItems, idempotencyKey);
             orderService.failOrder(order.getId());
             throw new BusinessException(ErrorCode.ORDER_PAYMENT_FAILED);
         }
@@ -202,29 +202,25 @@ public class OrderFacade {
         return ids;
     }
 
-    private void releaseStockWithRetry(OrderLineItem item, String idempotencyKey) {
-        String releaseKey = idempotencyKey + ":RELEASE:" + item.getProductId();
-        for (int attempt = 1; attempt <= 3; attempt++) {
-            try {
-                productClient.releaseStock(item.getProductId(), releaseKey,
-                        new StockReleaseRequest(item.getQuantity()));
-                return;
-            } catch (Exception e) {
-                log.warn("Stock release failed attempt {}/3 for productId={}: {}", attempt, item.getProductId(), e.getMessage());
-            }
+    private void releaseStocks(List<OrderLineItem> lineItems, String idempotencyKey) {
+        try {
+            productClient.releaseStock(idempotencyKey + STOCK_RELEASE_KEY_SUFFIX,
+                    new StockBatchReleaseRequest(lineItems.stream()
+                            .map(item -> new StockBatchReleaseItem(item.getProductId(), item.getQuantity()))
+                            .toList()));
+        } catch (Exception e) {
+            log.error("Stock batch release failed", e);
         }
-        log.error("Stock release exhausted retries for productId={}", item.getProductId());
     }
 
-    private void releaseCouponWithRetry(long memberCouponId, long memberId) {
-        for (int attempt = 1; attempt <= 3; attempt++) {
-            try {
-                couponClient.releaseCoupon(memberCouponId, new CouponReserveRequest(memberId));
-                return;
-            } catch (Exception e) {
-                log.warn("Coupon release failed attempt {}/3 for memberCouponId={}: {}", attempt, memberCouponId, e.getMessage());
-            }
+    private void releaseCoupons(List<Long> memberCouponIds, long memberId) {
+        if (memberCouponIds.isEmpty()) return;
+        try {
+            couponClient.releaseCoupon(new CouponBatchReserveRequest(memberCouponIds.stream()
+                    .map(id -> new CouponBatchReserveItem(id, memberId))
+                    .toList()));
+        } catch (Exception e) {
+            log.error("Coupon batch release failed", e);
         }
-        log.error("Coupon release exhausted retries for memberCouponId={}", memberCouponId);
     }
 }

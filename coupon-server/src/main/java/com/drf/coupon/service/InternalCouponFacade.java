@@ -5,6 +5,7 @@ import com.drf.coupon.entity.ApplyType;
 import com.drf.coupon.entity.MemberCoupon;
 import com.drf.coupon.model.request.internal.InternalCartCouponItemRequest;
 import com.drf.coupon.model.request.internal.InternalCartCouponRequest;
+import com.drf.coupon.model.request.internal.InternalCouponBatchReserveRequest;
 import com.drf.coupon.model.request.internal.InternalProductCouponRequest;
 import com.drf.coupon.model.response.internal.*;
 import lombok.RequiredArgsConstructor;
@@ -54,12 +55,12 @@ public class InternalCouponFacade {
         return new ProductCouponCalculateResponse(true, result.coupons().getFirst().getDiscountAmount());
     }
 
-    public void reserveCoupon(long memberCouponId, long memberId) {
-        internalCouponService.reserveCoupon(memberCouponId, memberId);
+    public void batchReserveCoupon(InternalCouponBatchReserveRequest request) {
+        internalCouponService.batchReserveCoupon(request.items());
     }
 
-    public void releaseCoupon(long memberCouponId, long memberId) {
-        internalCouponService.releaseCoupon(memberCouponId, memberId);
+    public void batchReleaseCoupon(InternalCouponBatchReserveRequest request) {
+        internalCouponService.batchReleaseCoupon(request.items());
     }
 
     public InternalProductCouponListResponse getAvailableProductCoupons(InternalProductCouponRequest request) {

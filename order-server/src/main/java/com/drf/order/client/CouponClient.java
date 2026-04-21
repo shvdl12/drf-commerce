@@ -1,7 +1,7 @@
 package com.drf.order.client;
 
 import com.drf.common.model.CommonResponse;
-import com.drf.order.client.dto.request.CouponReserveRequest;
+import com.drf.order.client.dto.request.CouponBatchReserveRequest;
 import com.drf.order.client.dto.request.InternalCartCouponRequest;
 import com.drf.order.client.dto.request.InternalProductCouponRequest;
 import com.drf.order.client.dto.response.InternalCartCouponAvailableListResponse;
@@ -33,13 +33,9 @@ public interface CouponClient {
             @PathVariable long memberCouponId,
             @RequestBody InternalProductCouponRequest request);
 
-    @PostMapping("/internal/coupons/{memberCouponId}/reserve")
-    CommonResponse<Void> reserveCoupon(
-            @PathVariable long memberCouponId,
-            @RequestBody CouponReserveRequest request);
+    @PostMapping("/internal/coupons/reserve")
+    CommonResponse<Void> reserveCoupon(@RequestBody CouponBatchReserveRequest request);
 
-    @DeleteMapping("/internal/coupons/{memberCouponId}/reserve")
-    CommonResponse<Void> releaseCoupon(
-            @PathVariable long memberCouponId,
-            @RequestBody CouponReserveRequest request);
+    @DeleteMapping("/internal/coupons/reserve")
+    CommonResponse<Void> releaseCoupon(@RequestBody CouponBatchReserveRequest request);
 }
