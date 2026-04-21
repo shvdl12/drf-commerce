@@ -17,13 +17,13 @@ public class ProductStockRedisRepository {
             if current == false then return -1 end
             if tonumber(current) < tonumber(ARGV[1]) then return -2 end
             return redis.call('DECRBY', KEYS[1], ARGV[1])
-            """);
+            """, Long.class);
 
     private static final DefaultRedisScript<Long> RELEASE_STOCK_SCRIPT = new DefaultRedisScript<>("""
             local current = redis.call('GET', KEYS[1])
             if current == false then return -1 end
             return redis.call('INCRBY', KEYS[1], ARGV[1])
-            """);
+            """, Long.class);
 
 
     private final StringRedisTemplate redisTemplate;

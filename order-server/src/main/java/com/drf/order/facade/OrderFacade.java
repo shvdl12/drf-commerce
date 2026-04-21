@@ -76,6 +76,8 @@ public class OrderFacade {
         try {
             address = memberClient.getDeliveryAddress(memberId, request.shippingAddressId()).getData();
         } catch (Exception e) {
+            log.error("Failed to fetch delivery address, memberId: {}, addressId: {}",
+                    memberId, request.shippingAddressId(), e);
             throw new BusinessException(ErrorCode.SHIPPING_ADDRESS_NOT_FOUND);
         }
 

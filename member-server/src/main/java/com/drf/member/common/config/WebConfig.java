@@ -25,6 +25,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/members/signup",
                         "/members/login",
                         "/members/refresh",
+                        "/internal/**",
                         "/error"
                 );
     }
