@@ -2,13 +2,12 @@ package com.drf.order.client;
 
 import com.drf.common.model.CommonResponse;
 import com.drf.order.client.dto.request.ProductBatchRequest;
+import com.drf.order.client.dto.request.StockReleaseRequest;
+import com.drf.order.client.dto.request.StockReserveRequest;
 import com.drf.order.client.dto.response.InternalProductResponse;
 import com.drf.order.client.dto.response.ProductResponse;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -21,4 +20,17 @@ public interface ProductClient {
     @PostMapping("/internal/products/batch")
     CommonResponse<List<InternalProductResponse>> getProductsBatch(@RequestBody ProductBatchRequest request);
 
+    @PostMapping("/internal/stocks/{productId}/reserve")
+    CommonResponse<Void> reserveStock(
+            @PathVariable long productId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody StockReserveRequest request
+    );
+
+    @PostMapping("/internal/stocks/{productId}/release")
+    CommonResponse<Void> releaseStock(
+            @PathVariable long productId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody StockReleaseRequest request
+    );
 }

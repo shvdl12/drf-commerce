@@ -1,0 +1,5 @@
+package com.drf.order.entity;
+
+public enum OrderEventType {
+    ORDER_CREATED, ORDER_PARTIALLY_CANCELLED, ORDER_CANCELLED, RETURN_REQUESTED, RETURN_COMPLETED
+}

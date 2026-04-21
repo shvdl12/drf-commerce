@@ -1,0 +1,5 @@
+package com.drf.order.entity;
+
+public enum OrderItemStatus {
+    PENDING, ORDERED, PREPARING, SHIPPING, DELIVERED, CANCELLED, EXPIRED, PAYMENT_FAILED, RETURN_REQUESTED, RETURNED
+}

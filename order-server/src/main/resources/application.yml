@@ -34,3 +34,5 @@ clients:
     url: http://localhost:8082
   coupon-server:
     url: http://localhost:8083
+  member-server:
+    url: http://localhost:8081

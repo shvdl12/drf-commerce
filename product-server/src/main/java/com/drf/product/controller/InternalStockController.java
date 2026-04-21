@@ -10,18 +10,16 @@ import com.drf.product.service.StockService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-public class StockController {
+@RequestMapping("/internal/stocks")
+public class InternalStockController {
 
     private final StockService stockService;
 
-    @PostMapping("/stocks/{productId}/reserve")
+    @PostMapping("/{productId}/reserve")
     @Idempotent(scope = "STOCK_RESERVE")
     public ResponseEntity<CommonResponse<StockReserveResponse>> reserveStock(
             @PathVariable long productId,
@@ -31,7 +29,7 @@ public class StockController {
         return ResponseEntity.ok(CommonResponse.success(response));
     }
 
-    @PostMapping("/stocks/{productId}/release")
+    @PostMapping("/{productId}/release")
     @Idempotent(scope = "STOCK_RELEASE")
     public ResponseEntity<CommonResponse<StockReleaseResponse>> releaseStock(
             @PathVariable long productId,
