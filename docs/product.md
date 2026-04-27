@@ -33,10 +33,14 @@
 - **시점**: 주문서 작성 및 결제 진입 시 (`OrderFacade.createOrder`)
 - **기술**: Redis Lua Script
 - **설계 결정**:
-  - Lua 스크립트를 통해 다음 3가지 작업을 원자적으로 수행합니다.
-    1. `DECR product:stock:{pid}`: 실시간 가용 재고 차감.
-    2. `HSET order:resv:{oid} {pid} {qty}`: 주문 중심 증빙 저장 (보상 스케줄러용).
-    3. `HSET product:resv_list:{pid} {oid} {qty}`: 상품 중심 인덱스 저장 (새벽 보정 배치용).
+  - 다수 상품의 주문 건에 대해 원자성을 보장하기 위해 리스트 형태로 요청을 처리합니다.
+  - Lua 스크립트에 주문번호(OID), 상품 ID(PID)와 수량(QTY)을 가변인자로 전달합니다.
+  - 별도의 롤백 로직이 필요 없도록 **'전체 수량 체크 후 차감'** 전략을 사용합니다.
+    1. **Pre-Check**: 모든 상품의 가용 재고(`product:stock:{pid}`)가 요청 수량 이상인지 먼저 전수 검사합니다. 하나라도 부족할 경우 즉시 실패를 반환합니다.
+    2. **Atomic Execution**: 모든 상품이 유효할 경우에만 루프를 돌며 아래 작업을 일괄 수행합니다.
+      - `DECRBY product:stock:{pid} {qty}`: 실시간 가용 재고 차감.
+      - `HSET order:resv:{oid} {pid} {qty}`: 주문 중심 증빙 저장 (보상 스케줄러용).
+      - `HSET product:resv_list:{pid} {oid} {qty}`: 상품 중심 인덱스 저장 (새벽 보정 배치용).
 
 ### 3-2. 2단계: 재고 확정 (Confirmation - MySQL)
 
