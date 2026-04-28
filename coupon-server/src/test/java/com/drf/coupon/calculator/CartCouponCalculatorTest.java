@@ -21,11 +21,11 @@ class CartCouponCalculatorTest {
 
     @BeforeEach
     void setUp() {
-        DiscountPolicyRegistry discountPolicyRegistry = new DiscountPolicyRegistry(
-                List.of(new FixedDiscountPolicy(), new RateDiscountPolicy()));
+        DiscountStrategyRegistry discountStrategyRegistry = new DiscountStrategyRegistry(
+                List.of(new FixedDiscountStrategy(), new RateDiscountStrategy()));
         ApplyScopeRegistry applyScopeRegistry = new ApplyScopeRegistry(
-                List.of(new AllApplyScope(), new CategoryApplyScope()));
-        calculator = new CartCouponCalculator(discountPolicyRegistry, applyScopeRegistry);
+                List.of(new AllApplyScopeStrategy(), new CategoryApplyScope()));
+        calculator = new CartCouponCalculator(discountStrategyRegistry, applyScopeRegistry);
     }
 
     private Coupon fixedCoupon(int discountValue, int minOrderAmount, int minOrderQuantity,

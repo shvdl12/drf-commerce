@@ -11,11 +11,4 @@ public interface ApplyScopeStrategy {
 
     List<InternalCartCouponItemRequest> filterApplicableItems(List<InternalCartCouponItemRequest> items, Long applyTargetId);
 
-    default int computeApplicableAmount(List<InternalCartCouponItemRequest> items) {
-        return items.stream().mapToInt(i -> i.price() * i.quantity()).sum();
-    }
-
-    default int computeApplicableQuantity(List<InternalCartCouponItemRequest> items) {
-        return items.stream().mapToInt(InternalCartCouponItemRequest::quantity).sum();
-    }
 }

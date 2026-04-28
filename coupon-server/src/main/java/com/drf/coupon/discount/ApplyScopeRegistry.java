@@ -13,8 +13,8 @@ public class ApplyScopeRegistry {
 
     private final Map<ApplyScope, ApplyScopeStrategy> registry;
 
-    public ApplyScopeRegistry(List<ApplyScopeStrategy> scopes) {
-        registry = scopes.stream()
+    public ApplyScopeRegistry(List<ApplyScopeStrategy> strategies) {
+        registry = strategies.stream()
                 .collect(Collectors.toMap(ApplyScopeStrategy::getApplyScope, s -> s));
     }
 

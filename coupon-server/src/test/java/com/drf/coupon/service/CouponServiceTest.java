@@ -38,13 +38,13 @@ class CouponServiceTest {
     private MemberCouponRepository memberCouponRepository;
 
     @Spy
-    private DiscountPolicyRegistry discountPolicyRegistry = new DiscountPolicyRegistry(
-            List.of(new FixedDiscountPolicy(), new RateDiscountPolicy())
+    private DiscountStrategyRegistry discountStrategyRegistry = new DiscountStrategyRegistry(
+            List.of(new FixedDiscountStrategy(), new RateDiscountStrategy())
     );
 
     @Spy
     private ApplyScopeRegistry applyScopeRegistry = new ApplyScopeRegistry(
-            List.of(new AllApplyScope(), new CategoryApplyScope())
+            List.of(new AllApplyScopeStrategy(), new CategoryApplyScope())
     );
 
     @BeforeEach

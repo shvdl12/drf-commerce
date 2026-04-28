@@ -1,11 +1,12 @@
 package com.drf.coupon.discount;
 
+import com.drf.common.money.Money;
 import com.drf.coupon.entity.Coupon;
 import com.drf.coupon.entity.DiscountType;
 
-public interface DiscountPolicy {
+public interface DiscountStrategy {
 
     DiscountType getType();
 
-    int calculate(Coupon coupon, int base);
+    Money calculate(Coupon coupon, Money applicableAmount);
 }

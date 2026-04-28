@@ -9,16 +9,16 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
-public class DiscountPolicyRegistry {
+public class DiscountStrategyRegistry {
 
-    private final Map<DiscountType, DiscountPolicy> registry;
+    private final Map<DiscountType, DiscountStrategy> registry;
 
-    public DiscountPolicyRegistry(List<DiscountPolicy> policies) {
-        registry = policies.stream()
-                .collect(Collectors.toMap(DiscountPolicy::getType, p -> p));
+    public DiscountStrategyRegistry(List<DiscountStrategy> strategies) {
+        registry = strategies.stream()
+                .collect(Collectors.toMap(DiscountStrategy::getType, p -> p));
     }
 
-    public DiscountPolicy get(DiscountType type) {
+    public DiscountStrategy get(DiscountType type) {
         return Optional.ofNullable(registry.get(type))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid discount type: " + type));
     }
