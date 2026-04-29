@@ -2,43 +2,40 @@ package com.drf.order.model.dto;
 
 import com.drf.order.client.dto.response.InternalProductResponse;
 import com.drf.order.entity.CartItem;
+import lombok.Builder;
 import lombok.Getter;
 
 import java.util.List;
 
 @Getter
+@Builder
 public class OrderLineItem {
 
     private final long cartItemId;
     private final long productId;
     private final String productName;
-    private final int unitPrice;
-    private final int discountedPrice;
+    private final int unitPrice; // 개당 가격
+    private final int unitDiscountAmount; // 자체 할인 금액
+    private final int discountedUnitPrice; // 자체 할인이 반영된 개당 가격
     private final int quantity;
     private final Long memberCouponId;
     private final List<Long> categoryPath;
+
     private int productCouponDiscount;
     private int orderCouponDiscount;
 
-    private OrderLineItem(long cartItemId, long productId, String productName,
-                          int unitPrice, int discountedPrice, int quantity,
-                          Long memberCouponId, List<Long> categoryPath) {
-        this.cartItemId = cartItemId;
-        this.productId = productId;
-        this.productName = productName;
-        this.unitPrice = unitPrice;
-        this.discountedPrice = discountedPrice;
-        this.quantity = quantity;
-        this.memberCouponId = memberCouponId;
-        this.categoryPath = categoryPath;
-    }
-
     public static OrderLineItem of(CartItem cartItem, InternalProductResponse product) {
-        return new OrderLineItem(
-                cartItem.getId(), cartItem.getProductId(), product.name(),
-                product.price(), product.discountedPrice(), cartItem.getQuantity(),
-                cartItem.getCouponId(), product.categoryPath()
-        );
+        return OrderLineItem.builder()
+                .cartItemId(cartItem.getId())
+                .productId(cartItem.getProductId())
+                .productName(product.name())
+                .unitPrice(product.price())
+                .unitDiscountAmount(product.discountAmount())
+                .discountedUnitPrice(product.discountedPrice())
+                .quantity(cartItem.getQuantity())
+                .memberCouponId(cartItem.getCouponId())
+                .categoryPath(product.categoryPath())
+                .build();
     }
 
     public void applyProductCouponDiscount(int discount) {
@@ -49,22 +46,29 @@ public class OrderLineItem {
         this.orderCouponDiscount = discount;
     }
 
-    public int subtotal() {
-        return discountedPrice * quantity;
+    public int grossAmount() {
+        return unitPrice * quantity;
     }
 
-    public int totalCouponDiscount() {
-        return productCouponDiscount + orderCouponDiscount;
+    public int getLineAmount() {
+        return discountedUnitPrice * quantity - productCouponDiscount;
     }
 
-    public int finalAmount() {
-        return subtotal() - totalCouponDiscount();
+    public int getProductDiscountAmount() {
+        return unitDiscountAmount * quantity;
     }
 
     public OrderItemData toOrderItemData() {
-        return new OrderItemData(
-                productId, productName, unitPrice, discountedPrice, quantity,
-                productCouponDiscount, orderCouponDiscount, finalAmount(), memberCouponId
-        );
+        return OrderItemData.builder()
+                .productId(productId)
+                .productName(productName)
+                .unitPrice(unitPrice)
+                .discountedPrice(discountedUnitPrice)
+                .quantity(quantity)
+                .productCouponDiscountAmount(productCouponDiscount)
+                .orderCouponDiscountAmount(orderCouponDiscount)
+                .finalAmount(discountedUnitPrice * quantity - productCouponDiscount - orderCouponDiscount)
+                .memberCouponId(memberCouponId)
+                .build();
     }
 }

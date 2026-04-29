@@ -1,5 +1,8 @@
 package com.drf.order.model.dto;
 
+import lombok.Builder;
+
+@Builder
 public record OrderItemData(
         long productId,
         String productName,

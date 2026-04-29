@@ -1,5 +1,13 @@
 package com.drf.order.model.dto;
 
-public record AmountResult(int totalAmount, int productDiscountAmount, int couponDiscountAmount, int deliveryFee,
-                           int finalAmount) {
+import lombok.Builder;
+
+@Builder
+public record AmountResult(
+        int totalAmount,
+        int productDiscountAmount,
+        int productCouponDiscountAmount,
+        int orderCouponDiscountAmount,
+        int deliveryFee,
+        int finalAmount) {
 }

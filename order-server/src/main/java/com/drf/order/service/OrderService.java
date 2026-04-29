@@ -5,6 +5,7 @@ import com.drf.order.client.dto.response.DeliveryAddressResponse;
 import com.drf.order.common.exception.ErrorCode;
 import com.drf.order.entity.*;
 import com.drf.order.event.OrderPaidApplicationEvent;
+import com.drf.order.model.dto.AmountResult;
 import com.drf.order.model.dto.OrderItemData;
 import com.drf.order.repository.OrderEventRepository;
 import com.drf.order.repository.OrderItemRepository;
@@ -28,18 +29,18 @@ public class OrderService {
 
     @Transactional
     public Order createOrder(long memberId, List<OrderItemData> items, DeliveryAddressResponse address,
-                             Long memberCouponId, int deliveryFee,
-                             int totalAmount, int productDiscountAmount, int couponDiscountAmount, int finalAmount) {
+                             Long memberCouponId, AmountResult amountResult) {
+
         Order order = orderRepository.save(Order.builder()
                 .orderNo(TsidCreator.getTsid().toString())
                 .memberId(memberId)
                 .memberCouponId(memberCouponId)
                 .status(OrderStatus.PENDING)
-                .totalAmount(totalAmount)
-                .deliveryFee(deliveryFee)
-                .productDiscountAmount(productDiscountAmount)
-                .couponDiscountAmount(couponDiscountAmount)
-                .finalAmount(finalAmount)
+                .totalAmount(amountResult.totalAmount())
+                .deliveryFee(amountResult.deliveryFee())
+                .productDiscountAmount(amountResult.productDiscountAmount())
+                .couponDiscountAmount(amountResult.productCouponDiscountAmount() + amountResult.orderCouponDiscountAmount())
+                .finalAmount(amountResult.finalAmount())
                 .refundedAmount(0)
                 .receiverName(address.receiverName())
                 .receiverPhone(address.phone())
