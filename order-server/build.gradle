@@ -11,3 +11,8 @@ dependencies {
 
     runtimeOnly 'com.mysql:mysql-connector-j'
 }
+
+tasks.withType(Test).configureEach {
+    jvmArgs '-XX:+EnableDynamicAgentLoading'
+    jvmArgs '-Xshare:off'
+}
