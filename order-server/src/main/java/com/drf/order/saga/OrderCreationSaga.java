@@ -25,7 +25,7 @@ public class OrderCreationSaga {
     private final OrderProductService orderProductService;
     private final OrderCouponService orderCouponService;
     private final OrderMemberService orderMemberService;
-    private final OrderPaymentService orderPaymentService;
+
 
     public SagaDefinition<OrderSagaContext> definition() {
         // @formatter:off
@@ -51,10 +51,6 @@ public class OrderCreationSaga {
                 .step("reserveCoupons")
                     .invoke(this::reserveCoupons)
                     .withCompensation(this::releaseCoupons)
-                .step("pay")
-                    .invoke(this::pay)
-                .step("completePayment")
-                    .invoke(this::completePayment)
                 .build();
         // @formatter:on
     }
@@ -115,21 +111,6 @@ public class OrderCreationSaga {
             log.error("Coupon reserve failed, orderId={}", ctx.getOrderId(), e);
             throw new BusinessException(ErrorCode.ORDER_COUPON_UNAVAILABLE);
         }
-    }
-
-    private void pay(OrderSagaContext ctx) {
-        try {
-            orderPaymentService.pay(ctx.getOrderId(), ctx.getAmounts().finalAmount(),
-                    ctx.getRequest().paymentMethodId());
-        } catch (Exception e) {
-            log.error("Payment failed, orderId={}", ctx.getOrderId(), e);
-            throw new BusinessException(ErrorCode.ORDER_PAYMENT_FAILED);
-        }
-    }
-
-    private void completePayment(OrderSagaContext ctx) {
-        orderService.completePayment(ctx.getOrderId(), ctx.getMemberId(),
-                ctx.getRequest().cartItemIds(), ctx.getReservedCouponIds());
     }
 
     // --- 보상 메서드 ---
