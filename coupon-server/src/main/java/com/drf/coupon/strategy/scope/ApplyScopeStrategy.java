@@ -1,4 +1,4 @@
-package com.drf.coupon.discount;
+package com.drf.coupon.strategy.scope;
 
 import com.drf.coupon.entity.ApplyScope;
 import com.drf.coupon.model.request.internal.InternalCartCouponItemRequest;

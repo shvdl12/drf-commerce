@@ -2,9 +2,9 @@ package com.drf.coupon.controller;
 
 import com.drf.common.model.AuthInfo;
 import com.drf.common.model.CommonResponse;
+import com.drf.coupon.facade.CouponFacade;
 import com.drf.coupon.model.response.CouponIssueResponse;
 import com.drf.coupon.model.response.MemberCouponListResponse;
-import com.drf.coupon.service.CouponFacade;
 import com.drf.coupon.service.CouponService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

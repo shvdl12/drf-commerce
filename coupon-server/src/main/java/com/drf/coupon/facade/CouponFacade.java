@@ -1,7 +1,8 @@
-package com.drf.coupon.service;
+package com.drf.coupon.facade;
 
 import com.drf.coupon.entity.Coupon;
 import com.drf.coupon.model.response.CouponIssueResponse;
+import com.drf.coupon.service.CouponService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

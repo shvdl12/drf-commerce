@@ -3,12 +3,17 @@ package com.drf.coupon.service;
 import com.drf.common.exception.BusinessException;
 import com.drf.common.model.Money;
 import com.drf.coupon.common.exception.ErrorCode;
-import com.drf.coupon.discount.*;
 import com.drf.coupon.entity.*;
 import com.drf.coupon.model.response.CouponIssueResponse;
 import com.drf.coupon.model.response.MemberCouponListResponse;
 import com.drf.coupon.repository.CouponRepository;
 import com.drf.coupon.repository.MemberCouponRepository;
+import com.drf.coupon.strategy.discount.DiscountStrategyRegistry;
+import com.drf.coupon.strategy.discount.FixedDiscountStrategy;
+import com.drf.coupon.strategy.discount.RateDiscountStrategy;
+import com.drf.coupon.strategy.scope.AllApplyScopeStrategy;
+import com.drf.coupon.strategy.scope.ApplyScopeRegistry;
+import com.drf.coupon.strategy.scope.CategoryApplyScopeStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -39,13 +44,13 @@ class CouponServiceTest {
     private MemberCouponRepository memberCouponRepository;
 
     @Spy
-    private DiscountPolicyRegistry discountPolicyRegistry = new DiscountPolicyRegistry(
+    private DiscountStrategyRegistry discountStrategyRegistry = new DiscountStrategyRegistry(
             List.of(new FixedDiscountStrategy(), new RateDiscountStrategy())
     );
 
     @Spy
     private ApplyScopeRegistry applyScopeRegistry = new ApplyScopeRegistry(
-            List.of(new AllApplyScope(), new CategoryApplyScope())
+            List.of(new AllApplyScopeStrategy(), new CategoryApplyScopeStrategy())
     );
 
     @BeforeEach

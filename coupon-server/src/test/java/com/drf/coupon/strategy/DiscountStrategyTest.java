@@ -1,10 +1,12 @@
-package com.drf.coupon.discount;
+package com.drf.coupon.strategy;
 
 import com.drf.common.model.Money;
 import com.drf.coupon.entity.ApplyType;
 import com.drf.coupon.entity.Coupon;
 import com.drf.coupon.entity.CouponStatus;
 import com.drf.coupon.entity.DiscountType;
+import com.drf.coupon.strategy.discount.FixedDiscountStrategy;
+import com.drf.coupon.strategy.discount.RateDiscountStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

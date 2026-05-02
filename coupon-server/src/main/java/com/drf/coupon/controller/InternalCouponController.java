@@ -1,6 +1,7 @@
 package com.drf.coupon.controller;
 
 import com.drf.common.model.CommonResponse;
+import com.drf.coupon.facade.InternalCouponFacade;
 import com.drf.coupon.model.request.internal.InternalCartCouponRequest;
 import com.drf.coupon.model.request.internal.InternalCouponBatchReserveRequest;
 import com.drf.coupon.model.request.internal.InternalProductCouponRequest;
@@ -8,7 +9,6 @@ import com.drf.coupon.model.response.internal.InternalCartCouponCalculateRespons
 import com.drf.coupon.model.response.internal.InternalCartCouponListResponse;
 import com.drf.coupon.model.response.internal.InternalProductCouponListResponse;
 import com.drf.coupon.model.response.internal.ProductCouponCalculateResponse;
-import com.drf.coupon.service.InternalCouponFacade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

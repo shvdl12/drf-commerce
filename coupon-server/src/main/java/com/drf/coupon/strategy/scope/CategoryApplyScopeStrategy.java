@@ -1,4 +1,4 @@
-package com.drf.coupon.discount;
+package com.drf.coupon.strategy.scope;
 
 import com.drf.coupon.entity.ApplyScope;
 import com.drf.coupon.model.request.internal.InternalCartCouponItemRequest;
@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-public class CategoryApplyScope implements ApplyScopeStrategy {
+public class CategoryApplyScopeStrategy implements ApplyScopeStrategy {
 
     @Override
     public ApplyScope getApplyScope() {

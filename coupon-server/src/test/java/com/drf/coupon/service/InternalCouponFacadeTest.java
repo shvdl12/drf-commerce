@@ -5,6 +5,7 @@ import com.drf.coupon.calculator.CartCouponCalculator;
 import com.drf.coupon.entity.ApplyType;
 import com.drf.coupon.entity.MemberCoupon;
 import com.drf.coupon.entity.MemberCouponStatus;
+import com.drf.coupon.facade.InternalCouponFacade;
 import com.drf.coupon.model.request.internal.InternalProductCouponRequest;
 import com.drf.coupon.model.response.internal.CartCouponResult;
 import com.drf.coupon.model.response.internal.InternalCartCouponCalculateResponse;

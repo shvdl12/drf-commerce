@@ -1,11 +1,16 @@
 package com.drf.coupon.calculator;
 
 import com.drf.common.model.Money;
-import com.drf.coupon.discount.*;
 import com.drf.coupon.entity.*;
 import com.drf.coupon.model.request.internal.InternalCartCouponItemRequest;
 import com.drf.coupon.model.response.internal.CartCouponResult;
 import com.drf.coupon.model.response.internal.InternalCartCouponListResponse;
+import com.drf.coupon.strategy.discount.DiscountStrategyRegistry;
+import com.drf.coupon.strategy.discount.FixedDiscountStrategy;
+import com.drf.coupon.strategy.discount.RateDiscountStrategy;
+import com.drf.coupon.strategy.scope.AllApplyScopeStrategy;
+import com.drf.coupon.strategy.scope.ApplyScopeRegistry;
+import com.drf.coupon.strategy.scope.CategoryApplyScopeStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,11 +27,11 @@ class CartCouponCalculatorTest {
 
     @BeforeEach
     void setUp() {
-        DiscountPolicyRegistry discountPolicyRegistry = new DiscountPolicyRegistry(
+        DiscountStrategyRegistry discountStrategyRegistry = new DiscountStrategyRegistry(
                 List.of(new FixedDiscountStrategy(), new RateDiscountStrategy()));
         ApplyScopeRegistry applyScopeRegistry = new ApplyScopeRegistry(
-                List.of(new AllApplyScope(), new CategoryApplyScope()));
-        calculator = new CartCouponCalculator(discountPolicyRegistry, applyScopeRegistry);
+                List.of(new AllApplyScopeStrategy(), new CategoryApplyScopeStrategy()));
+        calculator = new CartCouponCalculator(discountStrategyRegistry, applyScopeRegistry);
     }
 
     private Coupon fixedCoupon(long discountValue, Money minOrderAmount, int minOrderQuantity,

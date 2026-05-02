@@ -5,6 +5,7 @@ import com.drf.coupon.entity.ApplyType;
 import com.drf.coupon.entity.Coupon;
 import com.drf.coupon.entity.CouponStatus;
 import com.drf.coupon.entity.DiscountType;
+import com.drf.coupon.facade.CouponFacade;
 import com.drf.coupon.model.response.CouponIssueResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

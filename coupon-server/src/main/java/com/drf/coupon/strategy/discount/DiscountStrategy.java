@@ -1,4 +1,4 @@
-package com.drf.coupon.discount;
+package com.drf.coupon.strategy.discount;
 
 import com.drf.common.model.Money;
 import com.drf.coupon.entity.Coupon;

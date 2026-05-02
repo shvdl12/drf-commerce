@@ -2,16 +2,16 @@ package com.drf.coupon.calculator;
 
 import com.drf.common.exception.BusinessException;
 import com.drf.common.model.Money;
-import com.drf.coupon.discount.ApplyScopeRegistry;
-import com.drf.coupon.discount.ApplyScopeStrategy;
-import com.drf.coupon.discount.DiscountPolicyRegistry;
-import com.drf.coupon.discount.DiscountStrategy;
 import com.drf.coupon.entity.Coupon;
 import com.drf.coupon.entity.MemberCoupon;
 import com.drf.coupon.model.request.internal.InternalCartCouponItemRequest;
 import com.drf.coupon.model.response.internal.CartCouponResult;
 import com.drf.coupon.model.response.internal.InternalCartCouponListResponse;
 import com.drf.coupon.model.response.internal.InternalCouponItemResult;
+import com.drf.coupon.strategy.discount.DiscountStrategy;
+import com.drf.coupon.strategy.discount.DiscountStrategyRegistry;
+import com.drf.coupon.strategy.scope.ApplyScopeRegistry;
+import com.drf.coupon.strategy.scope.ApplyScopeStrategy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CartCouponCalculator {
 
-    private final DiscountPolicyRegistry discountPolicyRegistry;
+    private final DiscountStrategyRegistry discountStrategyRegistry;
     private final ApplyScopeRegistry applyScopeRegistry;
 
     public InternalCartCouponListResponse calculate(
@@ -43,7 +43,7 @@ public class CartCouponCalculator {
             }
 
             ApplyScopeStrategy scopeStrategy = applyScopeRegistry.get(coupon.getApplyScope());
-            DiscountStrategy discountStrategy = discountPolicyRegistry.get(coupon.getDiscountType());
+            DiscountStrategy discountStrategy = discountStrategyRegistry.get(coupon.getDiscountType());
 
             // 적용 상품 리스트 추출 및 총 금액, 수량 계산
             List<InternalCartCouponItemRequest> applicableItems =

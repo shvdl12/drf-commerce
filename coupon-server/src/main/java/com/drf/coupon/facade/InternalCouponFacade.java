@@ -1,4 +1,4 @@
-package com.drf.coupon.service;
+package com.drf.coupon.facade;
 
 import com.drf.coupon.calculator.CartCouponCalculator;
 import com.drf.coupon.entity.ApplyType;
@@ -8,6 +8,7 @@ import com.drf.coupon.model.request.internal.InternalCartCouponRequest;
 import com.drf.coupon.model.request.internal.InternalCouponBatchReserveRequest;
 import com.drf.coupon.model.request.internal.InternalProductCouponRequest;
 import com.drf.coupon.model.response.internal.*;
+import com.drf.coupon.service.InternalCouponService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
