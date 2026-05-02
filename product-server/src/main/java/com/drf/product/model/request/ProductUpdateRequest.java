@@ -15,7 +15,7 @@ public record ProductUpdateRequest(
         String name,
 
         @Min(0)
-        Integer price,
+        Long price,
 
         @Size(min = 1)
         String description,

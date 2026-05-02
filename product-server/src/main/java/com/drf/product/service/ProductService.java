@@ -94,19 +94,12 @@ public class ProductService {
         List<Product> products = productRepository.findByIdIn(request.ids());
 
         return products.stream()
-                .map(product -> {
-                    int discountAmount = calculateDisCountAmount(product.getPrice(), product.getDiscountRate());
-                    return InternalProductResponse.from(
-                            product,
-                            discountAmount,
-                            product.getPrice() - discountAmount,
-                            buildCategoryPath(product.getCategory())
-                    );
-                }).toList();
-    }
-
-    private int calculateDisCountAmount(int price, int discountRate) {
-        return price * discountRate / 100 / 100 * 100;
+                .map(product -> InternalProductResponse.from(
+                        product,
+                        product.calculateDiscountAmount(),
+                        product.calculateDiscountedPrice(),
+                        buildCategoryPath(product.getCategory())
+                )).toList();
     }
 
     @Transactional(readOnly = true)

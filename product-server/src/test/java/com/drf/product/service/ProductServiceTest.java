@@ -1,6 +1,7 @@
 package com.drf.product.service;
 
 import com.drf.common.exception.BusinessException;
+import com.drf.common.model.Money;
 import com.drf.product.common.exception.ErrorCode;
 import com.drf.product.entity.Category;
 import com.drf.product.entity.Product;
@@ -60,7 +61,7 @@ public class ProductServiceTest {
             request = ProductCreateRequest.builder()
                     .categoryId(1L)
                     .name("상품명")
-                    .price(10000)
+                    .price(10000L)
                     .description("상품 설명")
                     .discountRate(10)
                     .saleStartAt(LocalDateTime.of(2026, 3, 1, 0, 0, 0))
@@ -83,7 +84,7 @@ public class ProductServiceTest {
                     .id(1L)
                     .category(category)
                     .name(request.name())
-                    .price(request.price())
+                    .price(Money.of(request.price()))
                     .description(request.description())
                     .status(ProductStatus.READY)
                     .discountRate(request.discountRate())
@@ -109,7 +110,7 @@ public class ProductServiceTest {
             request = ProductCreateRequest.builder()
                     .categoryId(1L)
                     .name("상품명")
-                    .price(10000)
+                    .price(10000L)
                     .description("상품 설명")
                     .discountRate(10)
                     .saleStartAt(LocalDateTime.of(2026, 3, 1, 0, 0, 0))
@@ -129,7 +130,7 @@ public class ProductServiceTest {
             request = ProductCreateRequest.builder()
                     .categoryId(1L)
                     .name("상품명")
-                    .price(10000)
+                    .price(10000L)
                     .description("상품 설명")
                     .discountRate(10)
                     .saleStartAt(LocalDateTime.of(2026, 3, 1, 0, 0, 0))
@@ -177,7 +178,7 @@ public class ProductServiceTest {
                     .id(1L)
                     .category(category)
                     .name("상품명")
-                    .price(10000)
+                    .price(Money.of(10000))
                     .build();
         }
 
@@ -188,7 +189,7 @@ public class ProductServiceTest {
             request = ProductUpdateRequest.builder()
                     .categoryId(2L)
                     .name("수정된 상품명")
-                    .price(20000)
+                    .price(20000L)
                     .build();
 
             Category newCategory = Category.builder().name("새 카테고리").build();
@@ -266,7 +267,7 @@ public class ProductServiceTest {
                     .id(1L)
                     .category(category)
                     .name("상품명")
-                    .price(10000)
+                    .price(Money.of(10000))
                     .description("상품 설명")
                     .status(ProductStatus.READY)
                     .discountRate(10)
@@ -316,7 +317,7 @@ public class ProductServiceTest {
                     .id(1L)
                     .category(category)
                     .name("상품명")
-                    .price(10000)
+                    .price(Money.of(10000))
                     .status(ProductStatus.READY)
                     .discountRate(10)
                     .build();
@@ -353,7 +354,7 @@ public class ProductServiceTest {
                     .id(1L)
                     .category(category)
                     .name("상품명")
-                    .price(10000)
+                    .price(Money.of(10000))
                     .status(ProductStatus.READY)
                     .discountRate(10)
                     .build();
@@ -388,7 +389,7 @@ public class ProductServiceTest {
             Category grandchild = Category.builder().id(3L).name("최하위카테고리").parent(child).build();
 
             Product childProduct = Product.builder()
-                    .id(2L).category(grandchild).name("최하위상품").price(5000)
+                    .id(2L).category(grandchild).name("최하위상품").price(Money.of(5000))
                     .status(ProductStatus.READY).discountRate(0).build();
 
             Pageable pageable = PageRequest.of(0, 20);
@@ -431,7 +432,7 @@ public class ProductServiceTest {
             product = Product.builder()
                     .id(1L)
                     .name("상품명")
-                    .price(10000)
+                    .price(Money.of(10000))
                     .build();
         }
 

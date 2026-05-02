@@ -16,7 +16,7 @@ public record ProductCreateRequest(
 
         @Min(0)
         @NotNull
-        Integer price,
+        Long price,
 
         @NotBlank
         String description,

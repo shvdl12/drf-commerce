@@ -1,6 +1,8 @@
 package com.drf.product.entity;
 
+import com.drf.common.converter.MoneyConverter;
 import com.drf.common.entity.BaseTimeEntity;
+import com.drf.common.model.Money;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.util.StringUtils;
@@ -27,8 +29,9 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Convert(converter = MoneyConverter.class)
     @Column(nullable = false)
-    private int price;
+    private Money price;
 
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -45,12 +48,12 @@ public class Product extends BaseTimeEntity {
 
     private LocalDateTime deletedAt;
 
-    public static Product create(Category category, String name, int price, String description,
+    public static Product create(Category category, String name, long price, String description,
                                  Integer discountRate, LocalDateTime saleStartAt, LocalDateTime saleEndAt) {
         return Product.builder()
                 .category(category)
                 .name(name)
-                .price(price)
+                .price(Money.of(price))
                 .description(description)
                 .status(ProductStatus.READY)
                 .discountRate(Objects.requireNonNullElse(discountRate, 0))
@@ -59,11 +62,11 @@ public class Product extends BaseTimeEntity {
                 .build();
     }
 
-    public void updateProduct(Category category, String name, Integer price, String description,
+    public void updateProduct(Category category, String name, Long price, String description,
                               Integer discountRate, LocalDateTime saleStartAt, LocalDateTime saleEndAt) {
         if (category != null) this.category = category;
         if (StringUtils.hasText(name)) this.name = name;
-        if (price != null) this.price = price;
+        if (price != null) this.price = Money.of(price);
         if (StringUtils.hasText(description)) this.description = description;
         if (discountRate != null) this.discountRate = discountRate;
         if (saleStartAt != null) this.saleStartAt = saleStartAt;
@@ -73,5 +76,13 @@ public class Product extends BaseTimeEntity {
     public void delete() {
         this.status = ProductStatus.DELETED;
         this.deletedAt = LocalDateTime.now();
+    }
+
+    public Money calculateDiscountAmount() {
+        return this.price.calculateDiscountAmount(this.discountRate);
+    }
+
+    public Money calculateDiscountedPrice() {
+        return this.price.subtract(calculateDiscountAmount());
     }
 }
