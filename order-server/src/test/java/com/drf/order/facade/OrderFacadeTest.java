@@ -34,8 +34,10 @@ class OrderFacadeTest {
     private static final int FINAL_AMOUNT = 21_000;
     private static final String IDEMPOTENCY_KEY = "test-idem-key";
 
-    @Mock private SagaExecutor sagaExecutor;
-    @Mock private OrderCreationSaga orderCreationSaga;
+    @Mock
+    private SagaExecutor sagaExecutor;
+    @Mock
+    private OrderCreationSaga orderCreationSaga;
 
     @InjectMocks
     private OrderFacade orderFacade;
@@ -50,6 +52,7 @@ class OrderFacadeTest {
                 .deliveryFee(0).finalAmount(FINAL_AMOUNT).build();
 
         given(orderCreationSaga.definition()).willReturn(SagaDefinition.<OrderSagaContext>builder()
+                .name("name")
                 .step("noop").invoke(c -> {
                 })
                 .build());

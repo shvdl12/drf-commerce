@@ -58,8 +58,6 @@ class OrderCreationSagaTest {
     @Mock
     private OrderMemberService orderMemberService;
     @Mock
-    private OrderPaymentService orderPaymentService;
-    @Mock
     private SagaCompensationFailureService failureService;
 
     @InjectMocks
@@ -129,7 +127,6 @@ class OrderCreationSagaTest {
     void createOrder_success_noCoupon() {
         execute(new OrderCreateRequest(List.of(CART_ITEM_ID), ADDRESS_ID, "CARD", EXPECTED_AMOUNT_NO_COUPON));
 
-        then(orderService).should().completePayment(eq(ORDER_ID), eq(MEMBER_ID), anyList(), anyList());
         then(orderService).should(never()).failOrder(anyLong());
     }
 
@@ -180,24 +177,5 @@ class OrderCreationSagaTest {
         then(orderProductService).should().releaseStocks(anyList(), anyString());
         then(orderService).should().failOrder(ORDER_ID);
         then(orderCouponService).should(never()).releaseCoupons(anyList(), anyLong());
-    }
-
-    @Test
-    @DisplayName("결제 실패 — 쿠폰/재고 해제 + 주문 실패 처리")
-    void createOrder_paymentFail_releasesCouponAndStockAndFailsOrder() {
-        given(orderPricingService.calculateAmounts(anyList())).willReturn(productCouponAmounts);
-        given(orderCouponService.collectCouponIds(any(), anyList())).willReturn(List.of(MEMBER_COUPON_ID));
-        willThrow(new RuntimeException("결제 실패"))
-                .given(orderPaymentService).pay(anyLong(), anyInt(), anyString());
-
-        assertThatThrownBy(() -> execute(
-                new OrderCreateRequest(List.of(CART_ITEM_ID), ADDRESS_ID, "CARD", EXPECTED_AMOUNT_WITH_PRODUCT_COUPON)))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
-                        .isEqualTo(ErrorCode.ORDER_PAYMENT_FAILED));
-
-        then(orderCouponService).should().releaseCoupons(anyList(), anyLong());
-        then(orderProductService).should().releaseStocks(anyList(), anyString());
-        then(orderService).should().failOrder(ORDER_ID);
     }
 }

@@ -32,6 +32,7 @@ class SagaExecutorTest {
     void allStepsSucceed_executedInOrder() {
         List<String> calls = new ArrayList<>();
         SagaDefinition<Void> def = SagaDefinition.<Void>builder()
+                .name("orderSaga")
                 .step("s1").invoke(c -> calls.add("s1"))
                 .step("s2").invoke(c -> calls.add("s2"))
                 .step("s3").invoke(c -> calls.add("s3"))
@@ -47,6 +48,7 @@ class SagaExecutorTest {
     void stepFails_compensatesInReverseOrder() {
         List<String> calls = new ArrayList<>();
         SagaDefinition<Void> def = SagaDefinition.<Void>builder()
+                .name("orderSaga")
                 .step("s1").invoke(c -> calls.add("s1")).withCompensation(c -> calls.add("s1-comp"))
                 .step("s2").invoke(c -> calls.add("s2")).withCompensation(c -> calls.add("s2-comp"))
                 .step("s3").invoke(c -> {
@@ -66,6 +68,7 @@ class SagaExecutorTest {
     void compensationFails_continuesRemainingCompensations() {
         List<String> calls = new ArrayList<>();
         SagaDefinition<Void> def = SagaDefinition.<Void>builder()
+                .name("orderSaga")
                 .step("s1").invoke(c -> calls.add("s1")).withCompensation(c -> calls.add("s1-comp"))
                 .step("s2").invoke(c -> calls.add("s2")).withCompensation(c -> {
                     throw new RuntimeException("compensation fail");
@@ -88,6 +91,7 @@ class SagaExecutorTest {
     void stepWithNoCompensation_skipsCompensation() {
         List<String> calls = new ArrayList<>();
         SagaDefinition<Void> def = SagaDefinition.<Void>builder()
+                .name("orderSaga")
                 .step("s1").invoke(c -> calls.add("s1"))
                 .step("s2").invoke(c -> {
                     throw new RuntimeException("fail at s2");
@@ -106,6 +110,7 @@ class SagaExecutorTest {
     void rethrowsOriginalException() {
         RuntimeException original = new RuntimeException("original");
         SagaDefinition<Void> def = SagaDefinition.<Void>builder()
+                .name("orderSaga")
                 .step("s1").invoke(c -> {
                     throw original;
                 })
@@ -118,7 +123,8 @@ class SagaExecutorTest {
     @Test
     void should_throw_exception_when_action_is_null() {
         // given
-        var builder = SagaDefinition.<String>builder();
+        var builder = SagaDefinition.<String>builder()
+                .name("orderSaga");
 
         // when & then
         assertThatThrownBy(() ->
