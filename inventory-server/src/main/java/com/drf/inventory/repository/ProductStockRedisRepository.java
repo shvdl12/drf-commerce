@@ -28,6 +28,23 @@ public class ProductStockRedisRepository {
 
     private final StringRedisTemplate redisTemplate;
 
+    public Long getStock(long productId) {
+        String stock = redisTemplate.opsForValue().get(generateKey(productId));
+        return stock != null ? Long.parseLong(stock) : null;
+    }
+
+    public List<Long> getStocks(List<Long> productIds) {
+        List<String> keys = productIds.stream()
+                .map(this::generateKey)
+                .toList();
+        List<String> values = redisTemplate.opsForValue().multiGet(keys);
+        if (values == null) return List.of();
+
+        return values.stream()
+                .map(v -> v != null ? Long.parseLong(v) : null)
+                .toList();
+    }
+
     public void setStock(long productId, long stock) {
         redisTemplate.opsForValue().set(generateKey(productId), String.valueOf(stock));
     }

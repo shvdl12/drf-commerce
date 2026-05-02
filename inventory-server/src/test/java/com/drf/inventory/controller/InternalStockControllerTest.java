@@ -4,6 +4,7 @@ import com.drf.common.exception.BusinessException;
 import com.drf.inventory.common.exception.ErrorCode;
 import com.drf.inventory.model.request.StockBatchReleaseRequest;
 import com.drf.inventory.model.request.StockBatchReserveRequest;
+import com.drf.inventory.model.response.StockResponse;
 import com.drf.inventory.service.StockService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,8 +16,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.willDoNothing;
-import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.BDDMockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -26,6 +27,43 @@ class InternalStockControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private StockService stockService;
+
+    @Nested
+    @DisplayName("재고 조회")
+    class GetStocks {
+        @Test
+        @DisplayName("가용 재고 조회 성공 - 200 OK와 목록을 반환한다")
+        void getAvailableStocks_success() throws Exception {
+            // given
+            List<Long> productIds = List.of(1L, 2L);
+            List<StockResponse> responses = List.of(
+                    new StockResponse(1L, 100L),
+                    new StockResponse(2L, 200L)
+            );
+            given(stockService.getStocks(productIds)).willReturn(responses);
+
+            // when & then
+            mockMvc.perform(get("/internal/stocks/available")
+                            .param("productIds", "1,2")
+                            .header("X-User-Id", 1)
+                            .header("X-User-Role", "USER"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data[0].productId").value(1L))
+                    .andExpect(jsonPath("$.data[0].stock").value(100L))
+                    .andExpect(jsonPath("$.data[1].productId").value(2L))
+                    .andExpect(jsonPath("$.data[1].stock").value(200L));
+        }
+
+        @Test
+        @DisplayName("상품 ID 목록 누락 시 400 Bad Request를 반환한다")
+        void getAvailableStocks_fail_emptyProductIds() throws Exception {
+            // when & then
+            mockMvc.perform(get("/internal/stocks/available")
+                            .header("X-User-Id", 1)
+                            .header("X-User-Role", "USER"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
 
     @Nested
     @DisplayName("재고 선점")
