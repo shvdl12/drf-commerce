@@ -1,4 +1,4 @@
-package com.drf.member.event;
+package com.drf.member.event.internal;
 
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +13,7 @@ public class MemberSignUpEventTest {
 
         // then
         assertThat(event.getEventId()).isGreaterThan(0);
-        assertThat(event.getEventType()).isEqualTo("MEMBER_SIGN_UP");
+        assertThat(event.getEventType()).isEqualTo(MemberEventType.MEMBER_SIGNED_UP.name());
         assertThat(event.getPayload().id()).isEqualTo(1L);
         assertThat(event.getOccurredAt()).isNotNull();
     }
