@@ -11,6 +11,17 @@ import org.springframework.stereotype.Component;
 public class KafkaProducer {
     private final KafkaTemplate<String, String> kafkaTemplate;
 
+    public boolean sendSync(String topic, String key, String payload) {
+        try {
+            kafkaTemplate.send(topic, key, payload).get();
+            log.info("Kafka produce success: topic: {}, payload: {}", topic, payload);
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to kafka produce: {}", payload, e);
+            return false;
+        }
+    }
+
     public void sendMessage(String topic, String key, String payload, Runnable onError) {
         try {
             kafkaTemplate.send(topic, key, payload)
