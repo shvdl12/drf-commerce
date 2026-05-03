@@ -1,5 +1,6 @@
 package com.drf.member.controller;
 
+import com.drf.member.facade.MemberFacade;
 import com.drf.member.model.request.MemberSignUpRequest;
 import com.drf.member.model.request.PasswordUpdateRequest;
 import com.drf.member.model.request.ProfileUpdateRequest;
@@ -24,6 +25,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class MemberControllerTest extends BaseControllerTest {
 
     @MockitoBean
+    private MemberFacade memberFacade;
+
+    @MockitoBean
     private MemberService memberService;
 
     @Nested
@@ -42,7 +46,7 @@ class MemberControllerTest extends BaseControllerTest {
                     .birthDate(LocalDate.of(2000, 1, 1))
                     .build();
 
-            given(memberService.signUp(any(MemberSignUpRequest.class))).willReturn(1L);
+            given(memberFacade.signUp(any(MemberSignUpRequest.class))).willReturn(1L);
 
             // when & then
             mockMvc.perform(post("/members/signup")

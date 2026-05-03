@@ -6,7 +6,7 @@ import com.drf.member.common.exception.ErrorCode;
 import com.drf.member.entitiy.Member;
 import com.drf.member.entitiy.MemberStatus;
 import com.drf.member.entitiy.WithdrawnMemberHistory;
-import com.drf.member.event.MemberSignUpEvent;
+import com.drf.member.event.internal.MemberSignUpEvent;
 import com.drf.member.model.request.MemberSignUpRequest;
 import com.drf.member.model.request.PasswordUpdateRequest;
 import com.drf.member.model.request.ProfileUpdateRequest;
@@ -54,8 +54,8 @@ class MemberServiceTest {
     private ApplicationEventPublisher eventPublisher;
 
     @Nested
-    @DisplayName("회원가입")
-    class signUp {
+    @DisplayName("회원가입 검증")
+    class ValidateSignUp {
         private MemberSignUpRequest request;
 
         @BeforeEach
@@ -70,51 +70,13 @@ class MemberServiceTest {
         }
 
         @Test
-        @DisplayName("회원가입 성공")
-        void signUp_success() {
-            // given
-            given(memberRepository.existsByEmail(request.getEmail())).willReturn(false);
-            given(withdrawnMemberHistoryRepository.existsByEmailAndRejoinAllowedAtAfter(
-                    request.getEmail(), LocalDate.now())).willReturn(false);
-            given(passwordEncoder.encode(request.getPassword())).willReturn("encodedPassword");
-            Member savedMember = mock(Member.class);
-            given(savedMember.getId()).willReturn(1L);
-            given(memberRepository.save(any(Member.class))).willReturn(savedMember);
-
-            // when
-            Long id = memberService.signUp(request);
-
-            // then
-            assertThat(id).isEqualTo(1);
-            then(eventPublisher).should().publishEvent(any(MemberSignUpEvent.class));
-        }
-
-        @Test
         @DisplayName("이메일 중복 시 예외 발생")
-        void signUp_duplicateEmail() {
+        void validateSignUp_duplicateEmail() {
             // given
             given(memberRepository.existsByEmail(request.getEmail())).willReturn(true);
 
             // when & then
-            assertThatThrownBy(() -> memberService.signUp(request))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(ErrorCode.DUPLICATE_EMAIL);
-        }
-
-        @Test
-        @DisplayName("이메일 중복 시 예외 발생 (유니크 에러)")
-        void signUp_duplicateEmail_UniqueError() {
-            // given
-            given(memberRepository.existsByEmail(request.getEmail())).willReturn(false);
-            given(withdrawnMemberHistoryRepository.existsByEmailAndRejoinAllowedAtAfter(
-                    request.getEmail(), LocalDate.now())).willReturn(false);
-            given(passwordEncoder.encode(request.getPassword())).willReturn("encodedPassword");
-            given(memberRepository.save(any(Member.class)))
-                    .willThrow(new DataIntegrityViolationException("이메일 중복"));
-
-            // when & then
-            assertThatThrownBy(() -> memberService.signUp(request))
+            assertThatThrownBy(() -> memberService.validateSignUp(request))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.DUPLICATE_EMAIL);
@@ -122,17 +84,66 @@ class MemberServiceTest {
 
         @Test
         @DisplayName("재가입 제한 기간 내 가입 시 예외 발생")
-        void signUp_rejoinNotAllowed() {
+        void validateSignUp_rejoinNotAllowed() {
             // given
             given(memberRepository.existsByEmail(request.getEmail())).willReturn(false);
             given(withdrawnMemberHistoryRepository.existsByEmailAndRejoinAllowedAtAfter(
                     request.getEmail(), LocalDate.now())).willReturn(true);
 
             // when & then
-            assertThatThrownBy(() -> memberService.signUp(request))
+            assertThatThrownBy(() -> memberService.validateSignUp(request))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.REJOIN_NOT_ALLOWED);
+        }
+    }
+
+    @Nested
+    @DisplayName("회원 저장")
+    class Save {
+        private MemberSignUpRequest request;
+
+        @BeforeEach
+        void setUp() {
+            request = MemberSignUpRequest.builder()
+                    .email("test@test.com")
+                    .password("password123!")
+                    .name("홍길동")
+                    .phone("010-1234-5678")
+                    .birthDate(LocalDate.of(2026, 1, 1))
+                    .build();
+        }
+
+        @Test
+        @DisplayName("저장 성공 시 id 반환 및 이벤트 발행")
+        void save_success() {
+            // given
+            given(passwordEncoder.encode(request.getPassword())).willReturn("encodedPassword");
+            Member savedMember = mock(Member.class);
+            given(savedMember.getId()).willReturn(1L);
+            given(memberRepository.save(any(Member.class))).willReturn(savedMember);
+
+            // when
+            Long id = memberService.saveMember(request);
+
+            // then
+            assertThat(id).isEqualTo(1L);
+            then(eventPublisher).should().publishEvent(any(MemberSignUpEvent.class));
+        }
+
+        @Test
+        @DisplayName("DB 유니크 제약 위반 시 이메일 중복 예외 발생")
+        void save_duplicateEmail_UniqueError() {
+            // given
+            given(passwordEncoder.encode(request.getPassword())).willReturn("encodedPassword");
+            given(memberRepository.save(any(Member.class)))
+                    .willThrow(new DataIntegrityViolationException("이메일 중복"));
+
+            // when & then
+            assertThatThrownBy(() -> memberService.saveMember(request))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.DUPLICATE_EMAIL);
         }
     }
 

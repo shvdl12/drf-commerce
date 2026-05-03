@@ -6,7 +6,7 @@ import com.drf.member.common.exception.ErrorCode;
 import com.drf.member.entitiy.Member;
 import com.drf.member.entitiy.MemberStatus;
 import com.drf.member.entitiy.WithdrawnMemberHistory;
-import com.drf.member.event.MemberSignUpEvent;
+import com.drf.member.event.internal.MemberSignUpEvent;
 import com.drf.member.model.request.MemberSignUpRequest;
 import com.drf.member.model.request.PasswordUpdateRequest;
 import com.drf.member.model.request.ProfileUpdateRequest;
@@ -32,33 +32,25 @@ public class MemberService {
     private final ApplicationEventPublisher eventPublisher;
 
 
-    @Transactional
-    public Long signUp(MemberSignUpRequest request) {
-        // 이메일 중복 체크
+    @Transactional(readOnly = true)
+    public void validateSignUp(MemberSignUpRequest request) {
         if (memberRepository.existsByEmail(request.getEmail())) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
-        // 탈퇴 재가입 가능 여부 체크
         if (withdrawnMemberHistoryRepository.existsByEmailAndRejoinAllowedAtAfter(request.getEmail(), LocalDate.now())) {
             throw new BusinessException(ErrorCode.REJOIN_NOT_ALLOWED);
         }
+    }
 
-        Member member = Member.create(
-                request.getEmail(),
-                passwordEncoder.encode(request.getPassword()),
-                request.getName(),
-                request.getPhone(),
-                request.getBirthDate()
-        );
+    @Transactional
+    public Long saveMember(MemberSignUpRequest request) {
+        Member member = Member.create(request.getEmail(), passwordEncoder.encode(request.getPassword()),
+                request.getName(), request.getPhone(), request.getBirthDate());
 
         try {
             Member savedMember = memberRepository.save(member);
-
-            // 이벤트 발행
-            MemberSignUpEvent event = new MemberSignUpEvent(savedMember.getId());
-            eventPublisher.publishEvent(event);
-
+            eventPublisher.publishEvent(new MemberSignUpEvent(savedMember.getId()));
             return savedMember.getId();
         } catch (DataIntegrityViolationException e) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);

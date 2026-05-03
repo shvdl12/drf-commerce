@@ -2,6 +2,7 @@ package com.drf.member.controller;
 
 import com.drf.common.model.AuthInfo;
 import com.drf.common.model.CommonResponse;
+import com.drf.member.facade.MemberFacade;
 import com.drf.member.model.request.MemberSignUpRequest;
 import com.drf.member.model.request.PasswordUpdateRequest;
 import com.drf.member.model.request.ProfileUpdateRequest;
@@ -17,11 +18,12 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RequestMapping("/members")
 public class MemberController {
+    private final MemberFacade memberFacade;
     private final MemberService memberService;
 
     @PostMapping("/signup")
     public ResponseEntity<CommonResponse<MemberSignUpResponse>> memberSignUp(@RequestBody @Valid MemberSignUpRequest request) {
-        Long memberId = memberService.signUp(request);
+        Long memberId = memberFacade.signUp(request);
         MemberSignUpResponse response = new MemberSignUpResponse(memberId);
 
         return ResponseEntity.ok(CommonResponse.success(response));
