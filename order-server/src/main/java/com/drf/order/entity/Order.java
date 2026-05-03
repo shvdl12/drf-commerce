@@ -1,6 +1,8 @@
 package com.drf.order.entity;
 
+import com.drf.common.converter.MoneyConverter;
 import com.drf.common.entity.BaseTimeEntity;
+import com.drf.common.model.Money;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,22 +25,24 @@ public class Order extends BaseTimeEntity {
     private Long memberId;
 
     @Column(nullable = false)
-    private int totalAmount;
+    @Convert(converter = MoneyConverter.class)
+    private Money totalAmount;
 
     @Column(nullable = false)
-    private int deliveryFee;
+    @Convert(converter = MoneyConverter.class)
+    private Money deliveryFee;
 
     @Column(nullable = false)
-    private int productDiscountAmount;
+    @Convert(converter = MoneyConverter.class)
+    private Money productDiscountAmount;
 
     @Column(nullable = false)
-    private int couponDiscountAmount;
+    @Convert(converter = MoneyConverter.class)
+    private Money couponDiscountAmount;
 
     @Column(nullable = false)
-    private int finalAmount;
-
-    @Column(nullable = false)
-    private int refundedAmount;
+    @Convert(converter = MoneyConverter.class)
+    private Money finalAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -64,9 +68,5 @@ public class Order extends BaseTimeEntity {
 
     public void updateStatus(OrderStatus status) {
         this.status = status;
-    }
-
-    public void addRefundedAmount(int amount) {
-        this.refundedAmount += amount;
     }
 }

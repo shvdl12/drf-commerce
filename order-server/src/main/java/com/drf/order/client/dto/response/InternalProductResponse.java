@@ -1,18 +1,20 @@
 package com.drf.order.client.dto.response;
 
+import com.drf.order.model.type.ProductStatus;
+
 import java.util.List;
 
 public record InternalProductResponse(
         long id,
         String name,
         String description,
-        int price,
+        long price,
         int discountRate,
-        int discountAmount,
-        int discountedPrice,
+        long discountAmount,
+        long discountedPrice,
         long categoryId,
         List<Long> categoryPath,
-        String status,
+        ProductStatus status,
         int stock
 ) {
 }

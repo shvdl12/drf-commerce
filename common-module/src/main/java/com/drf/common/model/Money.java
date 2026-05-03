@@ -24,6 +24,10 @@ public final class Money {
         return new Money(amount);
     }
 
+    public boolean isGreaterThanOrEqualTo(Money other) {
+        return this.amount.compareTo(other.amount) >= 0;
+    }
+
     public boolean isLessThanOrEqualTo(Money other) {
         return this.amount.compareTo(other.amount) <= 0;
     }

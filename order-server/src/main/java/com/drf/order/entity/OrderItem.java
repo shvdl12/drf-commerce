@@ -1,6 +1,8 @@
 package com.drf.order.entity;
 
+import com.drf.common.converter.MoneyConverter;
 import com.drf.common.entity.BaseTimeEntity;
+import com.drf.common.model.Money;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,22 +28,27 @@ public class OrderItem extends BaseTimeEntity {
     private String productName;
 
     @Column(nullable = false)
-    private int unitPrice;
+    @Convert(converter = MoneyConverter.class)
+    private Money unitPrice;
 
     @Column(nullable = false)
-    private int discountedPrice;
+    @Convert(converter = MoneyConverter.class)
+    private Money discountedPrice;
 
     @Column(nullable = false)
     private int quantity;
 
     @Column(nullable = false)
-    private int productCouponDiscountAmount;
+    @Convert(converter = MoneyConverter.class)
+    private Money productCouponDiscountAmount;
 
     @Column(nullable = false)
-    private int orderCouponDiscountAmount;
+    @Convert(converter = MoneyConverter.class)
+    private Money orderCouponDiscountAmount;
 
     @Column(nullable = false)
-    private int finalAmount;
+    @Convert(converter = MoneyConverter.class)
+    private Money finalAmount;
 
     private Long memberCouponId;
 
