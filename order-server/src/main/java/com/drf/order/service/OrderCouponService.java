@@ -1,5 +1,6 @@
 package com.drf.order.service;
 
+import com.drf.common.model.Money;
 import com.drf.order.client.CouponClient;
 import com.drf.order.client.dto.request.CouponBatchReserveRequest;
 import com.drf.order.client.dto.request.InternalCartCouponItemRequest;
@@ -58,7 +59,7 @@ public class OrderCouponService {
                     .memberId(memberId)
                     .cartItemId(item.getCartItemId())
                     .productId(item.getProductId())
-                    .price(item.getDiscountedUnitPrice())
+                    .price(item.getDiscountedUnitPrice().toLong())
                     .quantity(item.getQuantity())
                     .categoryPath(item.getCategoryPath())
                     .usedMemberCouponIds(List.of())
@@ -68,7 +69,7 @@ public class OrderCouponService {
                     .calculateProductCoupon(item.getMemberCouponId(), request).getData();
 
             if (response.applicable()) {
-                item.applyProductCouponDiscount(response.discountAmount());
+                item.applyProductCouponDiscount(Money.of(response.discountAmount()));
             }
         }
     }
@@ -78,7 +79,7 @@ public class OrderCouponService {
                 .map(item -> InternalCartCouponItemRequest.builder()
                         .cartItemId(item.getCartItemId())
                         .productId(item.getProductId())
-                        .lineAmount(item.getLineAmount())
+                        .lineAmount(item.getLineAmount().toLong())
                         .quantity(item.getQuantity())
                         .categoryPath(item.getCategoryPath())
                         .build())
@@ -97,7 +98,7 @@ public class OrderCouponService {
         for (InternalCouponItemResult result : r.items()) {
             if (result.appliedYn()) {
                 OrderLineItem orderLineItem = lineItemMap.get(result.cartItemId());
-                orderLineItem.applyOrderCouponDiscount(result.discountAmount());
+                orderLineItem.applyOrderCouponDiscount(Money.of(result.discountAmount()));
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.drf.order.facade;
 
 import com.drf.common.model.AuthInfo;
+import com.drf.common.model.Money;
 import com.drf.order.entity.OrderStatus;
 import com.drf.order.model.dto.AmountResult;
 import com.drf.order.model.request.OrderCreateRequest;
@@ -47,9 +48,13 @@ class OrderFacadeTest {
     @BeforeEach
     void setUp() {
         amounts = AmountResult.builder()
-                .totalAmount(23_000).productDiscountAmount(2_000)
-                .productCouponDiscountAmount(0).orderCouponDiscountAmount(0)
-                .deliveryFee(0).finalAmount(FINAL_AMOUNT).build();
+                .totalAmount(Money.of(23_000))
+                .productDiscountAmount(Money.of(2_000))
+                .productCouponDiscountAmount(Money.ZERO)
+                .orderCouponDiscountAmount(Money.ZERO)
+                .deliveryFee(Money.ZERO)
+                .finalAmount(Money.of(FINAL_AMOUNT))
+                .build();
 
         given(orderCreationSaga.definition()).willReturn(SagaDefinition.<OrderSagaContext>builder()
                 .name("name")

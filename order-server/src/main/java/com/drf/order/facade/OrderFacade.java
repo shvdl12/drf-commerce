@@ -24,7 +24,7 @@ public class OrderFacade {
                 .orderId(ctx.getOrderId())
                 .orderNo(ctx.getOrderNo())
                 .status(ctx.getOrderStatus().name())
-                .finalAmount(ctx.getAmounts().finalAmount())
+                .finalAmount(ctx.getAmounts().finalAmount().toLong())
                 .build();
     }
 }

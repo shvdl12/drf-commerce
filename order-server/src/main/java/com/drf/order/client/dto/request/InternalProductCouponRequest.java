@@ -10,7 +10,7 @@ public record InternalProductCouponRequest(
         long memberId,
         long cartItemId,
         long productId,
-        int price,
+        long price,
         int quantity,
         List<Long> categoryPath,
         List<Long> usedMemberCouponIds

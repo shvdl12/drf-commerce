@@ -1,5 +1,6 @@
 package com.drf.order.model.dto;
 
+import com.drf.common.model.Money;
 import com.drf.order.client.dto.response.InternalProductResponse;
 import com.drf.order.entity.CartItem;
 import lombok.Builder;
@@ -14,48 +15,48 @@ public class OrderLineItem {
     private final long cartItemId;
     private final long productId;
     private final String productName;
-    private final int unitPrice; // 개당 가격
-    private final int unitDiscountAmount; // 자체 할인 금액
-    private final int discountedUnitPrice; // 자체 할인이 반영된 개당 가격
+    private final Money unitPrice; // 개당 가격
+    private final Money unitDiscountAmount; // 자체 할인 금액
+    private final Money discountedUnitPrice; // 자체 할인이 반영된 개당 가격
     private final int quantity;
     private final Long memberCouponId;
     private final List<Long> categoryPath;
 
-    private int productCouponDiscount;
-    private int orderCouponDiscount;
+    private Money productCouponDiscount;
+    private Money orderCouponDiscount;
 
     public static OrderLineItem of(CartItem cartItem, InternalProductResponse product) {
         return OrderLineItem.builder()
                 .cartItemId(cartItem.getId())
                 .productId(cartItem.getProductId())
                 .productName(product.name())
-                .unitPrice(product.price())
-                .unitDiscountAmount(product.discountAmount())
-                .discountedUnitPrice(product.discountedPrice())
+                .unitPrice(Money.of(product.price()))
+                .unitDiscountAmount(Money.of(product.discountAmount()))
+                .discountedUnitPrice(Money.of(product.discountedPrice()))
                 .quantity(cartItem.getQuantity())
                 .memberCouponId(cartItem.getCouponId())
                 .categoryPath(product.categoryPath())
                 .build();
     }
 
-    public void applyProductCouponDiscount(int discount) {
+    public void applyProductCouponDiscount(Money discount) {
         this.productCouponDiscount = discount;
     }
 
-    public void applyOrderCouponDiscount(int discount) {
+    public void applyOrderCouponDiscount(Money discount) {
         this.orderCouponDiscount = discount;
     }
 
-    public int grossAmount() {
-        return unitPrice * quantity;
+    public Money grossAmount() {
+        return unitPrice.multiply(quantity);
     }
 
-    public int getLineAmount() {
-        return discountedUnitPrice * quantity - productCouponDiscount;
+    public Money getLineAmount() {
+        return discountedUnitPrice.multiply(quantity).subtract(productCouponDiscount);
     }
 
-    public int getProductDiscountAmount() {
-        return unitDiscountAmount * quantity;
+    public Money getProductDiscountAmount() {
+        return unitDiscountAmount.multiply(quantity);
     }
 
     public OrderItemData toOrderItemData() {
@@ -67,7 +68,7 @@ public class OrderLineItem {
                 .quantity(quantity)
                 .productCouponDiscountAmount(productCouponDiscount)
                 .orderCouponDiscountAmount(orderCouponDiscount)
-                .finalAmount(discountedUnitPrice * quantity - productCouponDiscount - orderCouponDiscount)
+                .finalAmount(discountedUnitPrice.multiply(quantity).subtract(productCouponDiscount).subtract(orderCouponDiscount))
                 .memberCouponId(memberCouponId)
                 .build();
     }

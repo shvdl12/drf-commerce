@@ -7,9 +7,9 @@ public record CartItemResponse(
         long cartItemId,
         long productId,
         String productName,
-        int price,
+        long price,
         int quantity,
-        int subtotal,
+        long subtotal,
         String status,
         boolean outOfStock,
         boolean insufficientStock

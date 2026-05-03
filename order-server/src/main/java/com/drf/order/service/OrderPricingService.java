@@ -1,30 +1,46 @@
 package com.drf.order.service;
 
+import com.drf.common.model.Money;
 import com.drf.order.model.dto.AmountResult;
 import com.drf.order.model.dto.OrderLineItem;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class OrderPricingService {
-    private static final int FREE_SHIPPING_THRESHOLD = 50_000;
-    private static final int SHIPPING_FEE = 3_000;
+
+    private final DeliveryFeePolicy deliveryFeePolicy;
 
     public AmountResult calculateAmounts(List<OrderLineItem> lineItems) {
-        int totalAmount = lineItems.stream().mapToInt(OrderLineItem::grossAmount).sum();
+        // 할인 전 주문 총액
+        Money totalAmount = lineItems.stream()
+                .map(OrderLineItem::grossAmount)
+                .reduce(Money.ZERO, Money::add);
 
         // 자체 할인 총액
-        int productDiscountAmount = lineItems.stream().mapToInt(OrderLineItem::getProductDiscountAmount).sum();
+        Money productDiscountAmount = lineItems.stream()
+                .map(OrderLineItem::getProductDiscountAmount)
+                .reduce(Money.ZERO, Money::add);
 
         // 상품 쿠폰 할인 총액
-        int productCouponDiscountAmount = lineItems.stream().mapToInt(OrderLineItem::getProductCouponDiscount).sum();
+        Money productCouponDiscountAmount = lineItems.stream()
+                .map(OrderLineItem::getProductDiscountAmount)
+                .reduce(Money.ZERO, Money::add);
 
         // 주문 쿠폰 할인 총액
-        int orderCouponDiscountAmount = lineItems.stream().mapToInt(OrderLineItem::getOrderCouponDiscount).sum();
+        Money orderCouponDiscountAmount = lineItems.stream()
+                .map(OrderLineItem::getOrderCouponDiscount)
+                .reduce(Money.ZERO, Money::add);
 
-        int netAmount = totalAmount - productDiscountAmount - productCouponDiscountAmount - orderCouponDiscountAmount;
-        int deliveryFee = netAmount >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
+        Money netAmount = totalAmount
+                .subtract(productDiscountAmount)
+                .subtract(productCouponDiscountAmount)
+                .subtract(orderCouponDiscountAmount);
+
+        Money deliveryFee = deliveryFeePolicy.calculateFee(netAmount);
 
         return AmountResult.builder()
                 .totalAmount(totalAmount)
@@ -32,7 +48,7 @@ public class OrderPricingService {
                 .productCouponDiscountAmount(productCouponDiscountAmount)
                 .orderCouponDiscountAmount(orderCouponDiscountAmount)
                 .deliveryFee(deliveryFee)
-                .finalAmount(netAmount + deliveryFee)
+                .finalAmount(netAmount.add(deliveryFee))
                 .build();
     }
 }

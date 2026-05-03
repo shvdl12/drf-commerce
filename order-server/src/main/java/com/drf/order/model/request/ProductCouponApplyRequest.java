@@ -4,7 +4,7 @@ import java.util.List;
 
 public record ProductCouponApplyRequest(
         long cartItemId,
-        int price,
+        long price,
         int quantity,
         List<Long> categoryPath
 ) {

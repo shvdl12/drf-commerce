@@ -11,6 +11,6 @@ public record OrderCreateRequest(
         @NotEmpty List<Long> cartItemIds,
         @NotNull Long shippingAddressId,
         @NotBlank String paymentMethodId,
-        @Min(0) int expectedAmount
+        @Min(0) long expectedAmount
 ) {
 }

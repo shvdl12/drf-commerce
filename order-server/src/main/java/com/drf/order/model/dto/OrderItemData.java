@@ -1,17 +1,18 @@
 package com.drf.order.model.dto;
 
+import com.drf.common.model.Money;
 import lombok.Builder;
 
 @Builder
 public record OrderItemData(
         long productId,
         String productName,
-        int unitPrice,
-        int discountedPrice,
+        Money unitPrice,
+        Money discountedPrice,
         int quantity,
-        int productCouponDiscountAmount,
-        int orderCouponDiscountAmount,
-        int finalAmount,
+        Money productCouponDiscountAmount,
+        Money orderCouponDiscountAmount,
+        Money finalAmount,
         Long memberCouponId
 ) {
 }

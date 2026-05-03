@@ -8,7 +8,7 @@ import java.util.List;
 public record InternalCartCouponItemRequest(
         long cartItemId,
         long productId,
-        int lineAmount,
+        long lineAmount,
         int quantity,
         List<Long> categoryPath
 ) {

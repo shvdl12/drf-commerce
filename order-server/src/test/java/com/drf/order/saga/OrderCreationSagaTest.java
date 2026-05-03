@@ -1,6 +1,7 @@
 package com.drf.order.saga;
 
 import com.drf.common.exception.BusinessException;
+import com.drf.common.model.Money;
 import com.drf.order.client.dto.response.DeliveryAddressResponse;
 import com.drf.order.common.exception.ErrorCode;
 import com.drf.order.entity.Cart;
@@ -77,9 +78,9 @@ class OrderCreationSagaTest {
                 .cartItemId(CART_ITEM_ID)
                 .productId(PRODUCT_ID)
                 .productName("테스트 상품")
-                .unitPrice(10_000)
-                .unitDiscountAmount(1_000)
-                .discountedUnitPrice(9_000)
+                .unitPrice(Money.of(10_000))
+                .unitDiscountAmount(Money.of(1_000))
+                .discountedUnitPrice(Money.of(9_000))
                 .quantity(2)
                 .categoryPath(List.of(1L, 2L))
                 .build();
@@ -94,14 +95,14 @@ class OrderCreationSagaTest {
                 .build();
 
         AmountResult noCouponAmounts = AmountResult.builder()
-                .totalAmount(20_000).productDiscountAmount(2_000)
-                .productCouponDiscountAmount(0).orderCouponDiscountAmount(0)
-                .deliveryFee(3_000).finalAmount(EXPECTED_AMOUNT_NO_COUPON).build();
+                .totalAmount(Money.of(20_000)).productDiscountAmount(Money.of(2_000))
+                .productCouponDiscountAmount(Money.ZERO).orderCouponDiscountAmount(Money.ZERO)
+                .deliveryFee(Money.of(3_000)).finalAmount(Money.of(EXPECTED_AMOUNT_NO_COUPON)).build();
 
         productCouponAmounts = AmountResult.builder()
-                .totalAmount(20_000).productDiscountAmount(2_000)
-                .productCouponDiscountAmount(1_000).orderCouponDiscountAmount(0)
-                .deliveryFee(3_000).finalAmount(EXPECTED_AMOUNT_WITH_PRODUCT_COUPON).build();
+                .totalAmount(Money.of(20_000)).productDiscountAmount(Money.of(2_000))
+                .productCouponDiscountAmount(Money.of(1_000)).orderCouponDiscountAmount(Money.ZERO)
+                .deliveryFee(Money.of(3_000)).finalAmount(Money.of(EXPECTED_AMOUNT_WITH_PRODUCT_COUPON)).build();
 
         given(cartService.getValidatedCartItems(MEMBER_ID, List.of(CART_ITEM_ID)))
                 .willReturn(new CartItemsResult(cart, List.of(cartItem)));

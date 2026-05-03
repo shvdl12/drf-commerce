@@ -1,13 +1,14 @@
 package com.drf.order.model.dto;
 
+import com.drf.common.model.Money;
 import lombok.Builder;
 
 @Builder
 public record AmountResult(
-        int totalAmount,
-        int productDiscountAmount,
-        int productCouponDiscountAmount,
-        int orderCouponDiscountAmount,
-        int deliveryFee,
-        int finalAmount) {
+        Money totalAmount,
+        Money productDiscountAmount,
+        Money productCouponDiscountAmount,
+        Money orderCouponDiscountAmount,
+        Money deliveryFee,
+        Money finalAmount) {
 }

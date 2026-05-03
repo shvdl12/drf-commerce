@@ -33,6 +33,7 @@ public final class Money {
     }
 
     public Money add(Money other) {
+        other = defaultIfNull(other);
         return new Money(this.amount.add(other.amount));
     }
 
@@ -70,6 +71,7 @@ public final class Money {
     }
 
     public Money subtract(Money other) {
+        other = defaultIfNull(other);
         return new Money(this.amount.subtract(other.amount));
     }
 
@@ -92,6 +94,10 @@ public final class Money {
 
     public long toLong() {
         return amount.longValue();
+    }
+
+    private Money defaultIfNull(Money money) {
+        return money == null ? Money.ZERO : money;
     }
 
     @Override

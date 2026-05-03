@@ -1,6 +1,7 @@
 package com.drf.order.saga;
 
 import com.drf.common.exception.BusinessException;
+import com.drf.common.model.Money;
 import com.drf.order.common.exception.ErrorCode;
 import com.drf.order.entity.Order;
 import com.drf.order.model.dto.AmountResult;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Component
@@ -73,7 +75,7 @@ public class OrderCreationSaga {
 
     private void validateAmount(OrderSagaContext ctx) {
         AmountResult amounts = orderPricingService.calculateAmounts(ctx.getLineItems());
-        if (amounts.finalAmount() != ctx.getRequest().expectedAmount()) {
+        if (!Objects.equals(amounts.finalAmount(), Money.of(ctx.getRequest().expectedAmount()))) {
             throw new BusinessException(ErrorCode.ORDER_AMOUNT_MISMATCH);
         }
         ctx.setAmounts(amounts);

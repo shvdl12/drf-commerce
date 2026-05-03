@@ -72,7 +72,7 @@ class CartCouponCalculatorTest {
                 .build();
     }
 
-    private InternalCartCouponItemRequest item(long cartItemId, long productId, int price, int quantity, List<Long> categoryPath) {
+    private InternalCartCouponItemRequest item(long cartItemId, long productId, long price, int quantity, List<Long> categoryPath) {
         return new InternalCartCouponItemRequest(cartItemId, productId, price, quantity, categoryPath);
     }
 
